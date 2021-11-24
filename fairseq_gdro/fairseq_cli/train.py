@@ -116,7 +116,9 @@ def main(args):
 
     # fixme, hack
     if hasattr(trainer.criterion, "initialize"):
-        trainer.criterion.initialize(getattr(task.datasets["train"], "num_splits", args.num_train_groups))
+        trainer.criterion.initialize(
+            getattr(task.datasets["train"], "num_splits", args.num_train_groups)
+        )
         trainer._criterion = trainer._criterion.to(device=trainer.device)
 
     # Train until the learning rate gets too small
@@ -142,7 +144,9 @@ def main(args):
     train_meter.stop()
     logger.info("done training in {:.1f} seconds".format(train_meter.sum))
     if hasattr(checkpoint_utils.save_checkpoint, "best_epoch"):
-        logger.info("best checkpoint = {}".format(checkpoint_utils.save_checkpoint.best_epoch))
+        logger.info(
+            "best checkpoint = {}".format(checkpoint_utils.save_checkpoint.best_epoch)
+        )
 
 
 def should_stop_early(args, valid_loss):
@@ -246,31 +250,71 @@ def train(args, trainer, task, epoch_itr):
     trainer.resplit_train_epoch += 1
     # reweight instances
     if args.dynamic_group_dro and valid_stats is not None:
-        group_weights = [stats['w{}'.format(ii)] for ii in range(trainer.get_criterion().n_train_groups)]
+        group_weights = [
+            stats["w{}".format(ii)]
+            for ii in range(trainer.get_criterion().n_train_groups)
+        ]
         max_w = max(group_weights)
-        logger.info(" ".join(["w{} = {}".format(ii, group_weights[ii]) for ii in range(len(group_weights))]))
+        logger.info(
+            " ".join(
+                [
+                    "w{} = {}".format(ii, group_weights[ii])
+                    for ii in range(len(group_weights))
+                ]
+            )
+        )
         # new reweighting criterion with worst-case valid performance
         # for language generation, acc is log-likelihood
-        valid_group_acc = [(int(key.lstrip("fg_gacc")), valid_stats[key]) for key in valid_stats.keys() if key.startswith("fg_gacc")]
+        valid_group_acc = [
+            (int(key.lstrip("fg_gacc")), valid_stats[key])
+            for key in valid_stats.keys()
+            if key.startswith("fg_gacc")
+        ]
         worst_valid_acc = min([acc for _, acc in valid_group_acc])
         sorted_by_group_id = sorted(valid_group_acc, key=lambda tup: tup[0])
-        group_acc = " ".join(["%d: %.3f" % (idx, acc if acc > 0 else -acc) for idx, acc in sorted_by_group_id])
-        become_better = (trainer.worst_valid_acc is not None and worst_valid_acc > trainer.worst_valid_acc) or trainer.worst_valid_acc is None
-        trainer.worst_valid_acc = worst_valid_acc if trainer.worst_valid_acc is None else max(worst_valid_acc, trainer.worst_valid_acc)
+        group_acc = " ".join(
+            [
+                "%d: %.3f" % (idx, acc if acc > 0 else -acc)
+                for idx, acc in sorted_by_group_id
+            ]
+        )
+        become_better = (
+            trainer.worst_valid_acc is not None
+            and worst_valid_acc > trainer.worst_valid_acc
+        ) or trainer.worst_valid_acc is None
+        trainer.worst_valid_acc = (
+            worst_valid_acc
+            if trainer.worst_valid_acc is None
+            else max(worst_valid_acc, trainer.worst_valid_acc)
+        )
         trainer.bad_counts = 0 if become_better else trainer.bad_counts + 1
         logger.info("Valid group performance: {}".format(group_acc))
-        logger.info("Better worst valid = {}, bad counts = {}, worst acc = {}".format(become_better, trainer.bad_counts, worst_valid_acc))
+        logger.info(
+            "Better worst valid = {}, bad counts = {}, worst acc = {}".format(
+                become_better, trainer.bad_counts, worst_valid_acc
+            )
+        )
 
-        '''if conservative: satisfy both conditions then update inner weights; else: as long as one of the conditions satisfies
+        """if conservative: satisfy both conditions then update inner weights; else: as long as one of the conditions satisfies
         e.g. for every-epoch update: set --conservative=0, --resplit-epoch=-1, --resplit-patience=-1
         e.g. for update only when valid worst acc drops, set --conservative=1, --resplit-epoch=-1, --resplit-patience=0 
-        '''
-        if_update = (trainer.resplit_train_epoch > args.resplit_epoch and trainer.bad_counts > args.resplit_patience) \
-            if args.conservative else \
-            (trainer.resplit_train_epoch > args.resplit_epoch or trainer.bad_counts > args.resplit_patience)
+        """
+        if_update = (
+            (
+                trainer.resplit_train_epoch > args.resplit_epoch
+                and trainer.bad_counts > args.resplit_patience
+            )
+            if args.conservative
+            else (
+                trainer.resplit_train_epoch > args.resplit_epoch
+                or trainer.bad_counts > args.resplit_patience
+            )
+        )
         if if_update:
             if args.beta_cover_instances > 0:
-                itr = trainer.get_valid_iterator("valid_train").next_epoch_itr(shuffle=False)
+                itr = trainer.get_valid_iterator("valid_train").next_epoch_itr(
+                    shuffle=False
+                )
                 train_losses = np.zeros(len(task.datasets["valid_train"]))
                 counter = 0
                 for sample in itr:
@@ -302,24 +346,26 @@ def validate_and_save(args, trainer, task, epoch_itr, valid_subsets, end_of_epoc
     do_validate = (
         (not end_of_epoch and do_save)  # validate during mid-epoch saves
         or (end_of_epoch and epoch_itr.epoch % args.validate_interval == 0)
-        or (args.validate_interval_updates > 0 and num_updates % args.validate_interval_updates == 0)
+        or (
+            args.validate_interval_updates > 0
+            and num_updates % args.validate_interval_updates == 0
+        )
     ) and not args.disable_validation
 
     # Validate
     valid_losses = [None]
     valid_stats = None
     if do_validate:
-        valid_losses, valid_stats = validate(args, trainer, task, epoch_itr, valid_subsets)
+        valid_losses, valid_stats = validate(
+            args, trainer, task, epoch_itr, valid_subsets
+        )
 
     # Stopping conditions
     max_update = args.max_update or math.inf
     should_stop = (
         should_stop_early(args, valid_losses[0])
         or trainer.get_num_updates() >= max_update
-        or (
-            args.stop_time_hours > 0
-            and trainer.cumulative_training_time() / (60 * 60) > args.stop_time_hours
-        )
+        or (0 < args.stop_time_hours < trainer.cumulative_training_time() / (60 * 60))
     )
 
     # Save checkpoint
@@ -378,7 +424,9 @@ def validate(args, trainer, task, epoch_itr, subsets):
 
 def get_valid_stats(args, trainer, stats):
     stats["num_updates"] = trainer.get_num_updates()
-    stats["worst_acc"] = min([stats[key] for key in stats.keys() if key.startswith("fg_gacc")])
+    stats["worst_acc"] = min(
+        [stats[key] for key in stats.keys() if key.startswith("fg_gacc")]
+    )
     if hasattr(checkpoint_utils.save_checkpoint, "best"):
         key = "best_{0}".format(args.best_checkpoint_metric)
         best_function = max if args.maximize_best_checkpoint_metric else min

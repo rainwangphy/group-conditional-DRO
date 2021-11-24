@@ -1,5 +1,6 @@
 import os
 from collections import defaultdict
+
 root = "/private/home/chuntinz/work/data/hatespeech/founta/bin"
 
 stat = defaultdict(int)

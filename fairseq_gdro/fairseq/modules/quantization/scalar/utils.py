@@ -34,15 +34,25 @@ def quantize_model_(model, p=0.2, bits=8, update_step=3000):
     for layer in quantized_layers:
 
         # book-keeping
-        is_master_process = (not dist.is_initialized()) or (dist.is_initialized() and dist.get_rank() == 0)
+        is_master_process = (not dist.is_initialized()) or (
+            dist.is_initialized() and dist.get_rank() == 0
+        )
 
         # recover module
         module = attrgetter(layer)(model)
         if is_master_process:
-            logging.info(f"Quantizing layer {layer} with bits={bits} and QuantNoise={p}")
+            logging.info(
+                f"Quantizing layer {layer} with bits={bits} and QuantNoise={p}"
+            )
 
         # quantization params
-        q_params = {"p": p, "update_step": update_step, "bits": bits, "method": "histogram", "counter": 0}
+        q_params = {
+            "p": p,
+            "update_step": update_step,
+            "bits": bits,
+            "method": "histogram",
+            "counter": 0,
+        }
 
         # instantiate the quantized counterpart
         if isinstance(module, tuple(MAPPING.keys())):

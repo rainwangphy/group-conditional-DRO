@@ -96,11 +96,7 @@ class ResamplingDataset(BaseWrapperDataset):
     def ordered_indices(self):
         if self.internal_batch_by_size:
             if isinstance(self.sizes, np.ndarray) and len(self.sizes.shape) > 1:
-                order = [
-                    np.arange(len(self)),
-                    self.sizes[:, 1],
-                    self.sizes[:, 0]
-                ]
+                order = [np.arange(len(self)), self.sizes[:, 1], self.sizes[:, 0]]
             else:
                 order = [
                     np.arange(len(self)),
@@ -118,7 +114,7 @@ class ResamplingDataset(BaseWrapperDataset):
         return False
 
     def set_epoch(self, epoch):
-        logger.debug('ResamplingDataset.set_epoch: {}'.format(epoch))
+        logger.debug("ResamplingDataset.set_epoch: {}".format(epoch))
         super().set_epoch(epoch)
 
         if epoch == self._cur_epoch:

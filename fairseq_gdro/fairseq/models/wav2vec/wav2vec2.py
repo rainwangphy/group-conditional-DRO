@@ -564,7 +564,9 @@ class Wav2Vec2Model(BaseFairseqModel):
         if mask:
             x, mask_indices = self.apply_mask(features, padding_mask)
             if mask_indices is not None:
-                y = unmasked_features[mask_indices].view(unmasked_features.size(0), -1, unmasked_features.size(-1))
+                y = unmasked_features[mask_indices].view(
+                    unmasked_features.size(0), -1, unmasked_features.size(-1)
+                )
             else:
                 y = unmasked_features
         else:

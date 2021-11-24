@@ -55,9 +55,7 @@ class FairseqEncoder(nn.Module):
     @torch.jit.unused
     def forward_non_torchscript(self, net_input: Dict[str, Tensor]):
         encoder_input = {
-            k: v
-            for k, v in net_input.items()
-            if k != "prev_output_tokens"
+            k: v for k, v in net_input.items() if k != "prev_output_tokens"
         }
         return self.forward(**encoder_input)
 
@@ -86,6 +84,7 @@ class FairseqEncoder(nn.Module):
         """State from trainer to pass along to model at every update."""
 
         def _apply(m):
-            if hasattr(m, 'set_num_updates') and m != self:
+            if hasattr(m, "set_num_updates") and m != self:
                 m.set_num_updates(num_updates)
+
         self.apply(_apply)

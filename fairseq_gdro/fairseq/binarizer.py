@@ -10,6 +10,7 @@ from fairseq.tokenizer import tokenize_line
 import torch
 from fairseq.file_io import PathManager
 
+
 def safe_readline(f):
     pos = f.tell()
     while True:

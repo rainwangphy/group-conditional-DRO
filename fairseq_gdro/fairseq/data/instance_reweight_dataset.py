@@ -11,6 +11,7 @@ import torch
 import os
 from collections import Counter
 import logging
+
 logger = logging.getLogger(__name__)
 
 
@@ -58,7 +59,9 @@ class InstanceReweightDataset(BaseWrapperDataset):
         self.num_groups = len(self.original_groups_indices)
         self.num_splits = self.num_groups
 
-        self.split_counts = np.array([len(self.original_groups_indices[i]) for i in range(self.num_groups)])
+        self.split_counts = np.array(
+            [len(self.original_groups_indices[i]) for i in range(self.num_groups)]
+        )
 
         self.resplit(epoch=0)
         self.label_dataset_fg = label_dataset_fg
@@ -73,10 +76,10 @@ class InstanceReweightDataset(BaseWrapperDataset):
     def __getitem__(self, index):
         convert_index = self._cur_indices.array[index]
         item = self.dataset[convert_index]
-        item['label'] = self.label_dataset[convert_index]
-        item['weight'] = self.weight_array[convert_index]
+        item["label"] = self.label_dataset[convert_index]
+        item["weight"] = self.weight_array[convert_index]
         if self.label_dataset_fg is not None:
-            item['label_fg'] = self.label_dataset_fg[convert_index]
+            item["label_fg"] = self.label_dataset_fg[convert_index]
         return item
 
     def __len__(self):
@@ -90,12 +93,12 @@ class InstanceReweightDataset(BaseWrapperDataset):
         if "labels" not in sample:
             # in the case that the base dataset doesn't handle label collation, e.g. nested dataset
             # labels are the actual training labels, which might be noisy
-            sample["labels"] = torch.LongTensor([s['label'] for s in samples])
+            sample["labels"] = torch.LongTensor([s["label"] for s in samples])
             if self.label_dataset_fg is not None:
                 # fg labels means fine-grained labels that are created from A x Y, A is the spurious attributes
-                sample["labels_fg"] = torch.LongTensor([s['label_fg'] for s in samples])
+                sample["labels_fg"] = torch.LongTensor([s["label_fg"] for s in samples])
         if "weights" not in sample:
-            sample["weights"] = torch.FloatTensor([s['weight'] for s in samples])
+            sample["weights"] = torch.FloatTensor([s["weight"] for s in samples])
         return sample
 
     @property
@@ -113,11 +116,7 @@ class InstanceReweightDataset(BaseWrapperDataset):
     def ordered_indices(self):
         if self.internal_batch_by_size:
             if isinstance(self.sizes, np.ndarray) and len(self.sizes.shape) > 1:
-                order = [
-                    np.arange(len(self)),
-                    self.sizes[:, 1],
-                    self.sizes[:, 0]
-                ]
+                order = [np.arange(len(self)), self.sizes[:, 1], self.sizes[:, 0]]
             else:
                 order = [
                     np.arange(len(self)),
@@ -129,7 +128,7 @@ class InstanceReweightDataset(BaseWrapperDataset):
 
     @property
     def supports_prefetch(self):
-        return getattr(self.dataset, 'supports_prefetch', False)
+        return getattr(self.dataset, "supports_prefetch", False)
 
     def prefetch(self, indices):
         self.dataset.prefetch(self._cur_indices.array[indices])
@@ -170,7 +169,9 @@ class InstanceReweightDataset(BaseWrapperDataset):
             if self.accum_losses is None:
                 self.accum_losses = losses
             else:
-                self.accum_losses = self.accum_losses * (1 - self.ema) + losses * self.ema
+                self.accum_losses = (
+                    self.accum_losses * (1 - self.ema) + losses * self.ema
+                )
 
             #
             total = len(split_array)
@@ -184,15 +185,27 @@ class InstanceReweightDataset(BaseWrapperDataset):
                 count = len(select_idx)
                 idx_sorted = np.argsort(self.accum_losses[select_idx])
                 idx = select_idx[idx_sorted][::-1]
-                cutoff_count = int((total - count) * count * self.beta / (total - count * self.beta))
+                cutoff_count = int(
+                    (total - count) * count * self.beta / (total - count * self.beta)
+                )
                 self.weight_array[idx] = count / total
                 self.weight_array[idx[:cutoff_count]] = 1.0 / self.beta
-            #
+                #
                 if self.flog is not None:
-                    losses = " ".join(["{:.6f}".format(l) for l in self.accum_losses[idx]])
-                    weight = " ".join(["{:.6f}".format(l) for l in self.weight_array[idx]])
-                    labels = " ".join(["{}".format(self.dataset[l]["target"].item()) for l in idx])
-                    self.flog.write("group_id={}\tcount={}\tlosses={}\tweights={}\tlabels={}\n".format(gidx, len(select_idx), losses, weight, labels))
+                    losses = " ".join(
+                        ["{:.6f}".format(l) for l in self.accum_losses[idx]]
+                    )
+                    weight = " ".join(
+                        ["{:.6f}".format(l) for l in self.weight_array[idx]]
+                    )
+                    labels = " ".join(
+                        ["{}".format(self.dataset[l]["target"].item()) for l in idx]
+                    )
+                    self.flog.write(
+                        "group_id={}\tcount={}\tlosses={}\tweights={}\tlabels={}\n".format(
+                            gidx, len(select_idx), losses, weight, labels
+                        )
+                    )
         else:
             self.weight_array = np.ones(len(self.label_dataset.labels))
 

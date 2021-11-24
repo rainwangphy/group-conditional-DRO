@@ -27,6 +27,4 @@ class WerScorer(object):
         return f"WER: {self.score()}"
 
     def score(self):
-        return (
-            100.0 * self.distance / self.ref_length if self.ref_length > 0 else 0
-        )
+        return 100.0 * self.distance / self.ref_length if self.ref_length > 0 else 0

@@ -61,7 +61,7 @@ def get_validation_parser(default_task=None):
 
 
 def csv_str_list(x):
-    return x.split(',')
+    return x.split(",")
 
 
 def eval_str_list(x, type=float):

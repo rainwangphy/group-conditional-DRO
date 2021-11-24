@@ -7,7 +7,7 @@ from . import FairseqLRScheduler, register_lr_scheduler
 import math
 
 
-@register_lr_scheduler('tri_stage')
+@register_lr_scheduler("tri_stage")
 class TriStageLRSchedule(FairseqLRScheduler):
     """Tristage learning rate schedulr
 
@@ -50,8 +50,8 @@ class TriStageLRSchedule(FairseqLRScheduler):
         super().__init__(args, optimizer)
         if len(args.lr) > 1:
             raise ValueError(
-                'Cannot use a fixed learning rate schedule with tri-stage lr.'
-                ' Consider --lr-scheduler=fixed instead.'
+                "Cannot use a fixed learning rate schedule with tri-stage lr."
+                " Consider --lr-scheduler=fixed instead."
             )
 
         # calculate LR at each point
@@ -65,7 +65,8 @@ class TriStageLRSchedule(FairseqLRScheduler):
         self.decay_steps = args.decay_steps
 
         self.warmup_rate = (
-            (self.peak_lr - self.init_lr) / self.warmup_steps if self.warmup_steps != 0
+            (self.peak_lr - self.init_lr) / self.warmup_steps
+            if self.warmup_steps != 0
             else 0
         )
         self.decay_factor = -math.log(args.final_lr_scale) / args.decay_steps

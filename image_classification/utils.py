@@ -1,10 +1,11 @@
-__author__ = 'max'
+__author__ = "max"
 
 
 class AverageMeter(object):
     """Computes and stores the average and current value
-       Imported from https://github.com/pytorch/examples/blob/master/imagenet/main.py#L247-L262
+    Imported from https://github.com/pytorch/examples/blob/master/imagenet/main.py#L247-L262
     """
+
     def __init__(self):
         self.val = 0
         self.avg = 0
@@ -21,7 +22,7 @@ class AverageMeter(object):
         self.val = val
         self.sum += val * n
         self.count += n
-        self.avg = self.sum / self.count if self.count > 0 else 0.
+        self.avg = self.sum / self.count if self.count > 0 else 0.0
 
 
 def accuracy(output, target, topk=(1,)):

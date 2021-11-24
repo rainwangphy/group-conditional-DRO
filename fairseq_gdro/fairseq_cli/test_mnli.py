@@ -100,7 +100,13 @@ def main(args):
     # corresponding train iterator
     extra_state, epoch_itr = checkpoint_utils.load_checkpoint(args, trainer)
 
-    best_epoch = int(open(os.path.join(save_dir, "log.txt")).readlines()[-1].strip().split("=")[-1].strip())
+    best_epoch = int(
+        open(os.path.join(save_dir, "log.txt"))
+        .readlines()[-1]
+        .strip()
+        .split("=")[-1]
+        .strip()
+    )
     log_opt.write("Test on checkpoint {}\n".format(best_epoch))
     test_subsets = args.test_subset.split(",")
     stats = test(args, trainer, epoch_itr, test_subsets)
@@ -113,7 +119,11 @@ def main(args):
             fg_accs[idx] = value
     worst_acc = min(fg_accs.values())
     print("Worst_acc {}\n".format(worst_acc))
-    log_opt.write("FG_acc {}\n".format(" ".join([str(fg_accs[idx]) for idx in range(len(fg_accs))])))
+    log_opt.write(
+        "FG_acc {}\n".format(
+            " ".join([str(fg_accs[idx]) for idx in range(len(fg_accs))])
+        )
+    )
     log_opt.write("Worst_acc {}\n".format(worst_acc))
     log_opt.close()
 

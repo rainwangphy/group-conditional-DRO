@@ -10,10 +10,12 @@ import torch
 
 
 class AddLabelDataset(BaseWrapperDataset):
-    def __init__(self,
-                 label_dataset:RawLabelDataset,
-                 dataset:FairseqDataset,
-                 label_2:RawLabelDataset=None):
+    def __init__(
+        self,
+        label_dataset: RawLabelDataset,
+        dataset: FairseqDataset,
+        label_2: RawLabelDataset = None,
+    ):
 
         super().__init__(dataset)
 
@@ -23,11 +25,11 @@ class AddLabelDataset(BaseWrapperDataset):
 
     def __getitem__(self, idx):
         item = self.dataset[idx]
-        item['label'] = self.label_dataset[idx]
+        item["label"] = self.label_dataset[idx]
         if self.label_dataset_2 is not None:
             # Hack for MNLI: for train, label2 is the finegrained label, label is the original resplit label
             # for test/valid, label2 is none, and label is finegrained label
-            item['label_fg'] = self.label_dataset_2[idx]
+            item["label_fg"] = self.label_dataset_2[idx]
         return item
 
     def collater(self, samples):
@@ -36,7 +38,7 @@ class AddLabelDataset(BaseWrapperDataset):
             return sample
         if "labels" not in sample:
             # in the case that the base dataset doesn't handle label collation, e.g. nested dataset
-            sample["labels"] = torch.LongTensor([s['label'] for s in samples])
+            sample["labels"] = torch.LongTensor([s["label"] for s in samples])
             if self.label_dataset_2 is not None:
-                sample["labels_fg"] = torch.LongTensor([s['label_fg'] for s in samples])
+                sample["labels_fg"] = torch.LongTensor([s["label_fg"] for s in samples])
         return sample

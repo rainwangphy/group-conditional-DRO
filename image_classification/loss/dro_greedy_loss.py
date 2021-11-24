@@ -4,10 +4,12 @@ import torch.nn as nn
 
 
 class DROGreedyLoss(nn.Module):
-    def __init__(self, model, n_groups, n_domains, alpha, fraction=None, split_with_group=True):
+    def __init__(
+        self, model, n_groups, n_domains, alpha, fraction=None, split_with_group=True
+    ):
         super(DROGreedyLoss, self).__init__()
         self.model = model
-        self.criterion = nn.CrossEntropyLoss(reduction='none')
+        self.criterion = nn.CrossEntropyLoss(reduction="none")
         self.alpha = alpha
         self.ema = 0.1
         self.n_groups = n_groups
@@ -18,27 +20,31 @@ class DROGreedyLoss(nn.Module):
         else:
             self.n_splits = n_domains
 
-        self.register_buffer('h_fun', torch.ones(self.n_splits))
-        self.register_buffer('sum_losses', torch.zeros(self.n_splits))  # historical loss sum over category
+        self.register_buffer("h_fun", torch.ones(self.n_splits))
+        self.register_buffer(
+            "sum_losses", torch.zeros(self.n_splits)
+        )  # historical loss sum over category
         if fraction is not None:
-            self.register_buffer('fraction', torch.from_numpy(fraction).float())
-            self.register_buffer('count_cat', None)
+            self.register_buffer("fraction", torch.from_numpy(fraction).float())
+            self.register_buffer("count_cat", None)
         else:
-            self.register_buffer('count_cat', torch.ones(self.n_splits))
+            self.register_buffer("count_cat", torch.ones(self.n_splits))
 
-        self.idx_dict = defaultdict(lambda: len(self.idx_dict))  # autoincrementing index.
+        self.idx_dict = defaultdict(
+            lambda: len(self.idx_dict)
+        )  # autoincrementing index.
         for i in range(self.n_groups):
-            _ = self.idx_dict['[' + str(i) + ']']
+            _ = self.idx_dict["[" + str(i) + "]"]
 
     def reset(self):
-        self.h_fun.fill_(1.)
-        self.sum_losses.fill_(0.)
+        self.h_fun.fill_(1.0)
+        self.sum_losses.fill_(0.0)
         if self.count_cat is not None:
-            self.count_cat.fill_(1.)
+            self.count_cat.fill_(1.0)
 
     def reset_loss(self):
-        self.h_fun.fill_(1.)
-        self.sum_losses.fill_(0.)
+        self.h_fun.fill_(1.0)
+        self.sum_losses.fill_(0.0)
 
     def forward(self, x, y, g, d, w):
         outputs = self.model(x)
@@ -61,9 +67,15 @@ class DROGreedyLoss(nn.Module):
         with torch.no_grad():
             if self.training:
                 gdro_counts = zero_vec.scatter_add(0, s, one_vec).float()
-                gdro_losses = gdro_losses.detach().div(gdro_counts + (gdro_counts == 0).float())
+                gdro_losses = gdro_losses.detach().div(
+                    gdro_counts + (gdro_counts == 0).float()
+                )
                 valid_idx = gdro_counts.gt(0)
-                self.sum_losses[valid_idx] = self.sum_losses[valid_idx].mul(1 - self.ema).add(gdro_losses[valid_idx], alpha=self.ema)
+                self.sum_losses[valid_idx] = (
+                    self.sum_losses[valid_idx]
+                    .mul(1 - self.ema)
+                    .add(gdro_losses[valid_idx], alpha=self.ema)
+                )
                 if self.count_cat is not None:
                     self.count_cat.mul_(1 - self.ema).add_(gdro_counts, alpha=self.ema)
                 self.update_mw()
@@ -76,8 +88,12 @@ class DROGreedyLoss(nn.Module):
 
             preds = outputs.argmax(dim=1)
             corrects = preds.eq(y).float()
-            acc = corrects.sum().mul(100. / batch_size)
-            group_accs = zero_vec.scatter_add(0, g, corrects).mul(100.).div(group_counts + (group_counts == 0).float())
+            acc = corrects.sum().mul(100.0 / batch_size)
+            group_accs = (
+                zero_vec.scatter_add(0, g, corrects)
+                .mul(100.0)
+                .div(group_counts + (group_counts == 0).float())
+            )
 
         return robust_loss, acc, group_losses, group_accs, group_counts
 

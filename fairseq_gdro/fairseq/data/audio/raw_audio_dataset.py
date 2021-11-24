@@ -72,11 +72,7 @@ class RawAudioDataset(FairseqDataset):
         return wav[start:end]
 
     def collater(self, samples):
-        samples = [
-            s
-            for s in samples
-            if s["source"] is not None
-        ]
+        samples = [s for s in samples if s["source"] is not None]
         if len(samples) == 0:
             return {}
 

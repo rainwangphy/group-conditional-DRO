@@ -335,7 +335,9 @@ class Wav2VecEncoder(FairseqEncoder):
             state = None
             w2v_args = args.w2v_args
 
-        assert args.normalize == w2v_args.normalize, 'Fine-tuning works best when data normalization is the same'
+        assert (
+            args.normalize == w2v_args.normalize
+        ), "Fine-tuning works best when data normalization is the same"
 
         w2v_args.data = args.data
         task = tasks.setup_task(w2v_args)
@@ -358,7 +360,7 @@ class Wav2VecEncoder(FairseqEncoder):
 
         if tgt_dict is not None:
             self.proj = Linear(d, len(tgt_dict))
-        elif getattr(args, 'decoder_embed_dim', d) != d:
+        elif getattr(args, "decoder_embed_dim", d) != d:
             self.proj = Linear(d, args.decoder_embed_dim)
         else:
             self.proj = None
@@ -668,6 +670,8 @@ def seq2seq_architecture(args):
     args.decoder_dropout = getattr(args, "decoder_dropout", 0)
     args.decoder_attention_dropout = getattr(args, "decoder_attention_dropout", 0)
     args.decoder_activation_dropout = getattr(args, "decoder_activation_dropout", 0)
-    args.share_decoder_input_output_embed = getattr(args, "share_decoder_input_output_embed", False)
+    args.share_decoder_input_output_embed = getattr(
+        args, "share_decoder_input_output_embed", False
+    )
 
     base_architecture(args)

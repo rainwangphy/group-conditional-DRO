@@ -5,7 +5,7 @@ from process.criterions.utils import compute_binary_group_acc
 
 
 class GreedyGroupDRO(nn.Module):
-    def __init__(self, alpha=0.2, train_groups=2, test_groups=2, device='cuda'):
+    def __init__(self, alpha=0.2, train_groups=2, test_groups=2, device="cuda"):
         super(GreedyGroupDRO, self).__init__()
 
         self.n_train_groups = train_groups
@@ -15,14 +15,16 @@ class GreedyGroupDRO(nn.Module):
         self.alpha = alpha
         self.device = device
         #
-        self.register_buffer('h_fun', torch.ones(self.n_train_groups))
-        self.register_buffer('sum_losses', torch.zeros(self.n_train_groups))  # historical loss sum over category
-        self.register_buffer('count_cat', torch.ones(self.n_train_groups))
+        self.register_buffer("h_fun", torch.ones(self.n_train_groups))
+        self.register_buffer(
+            "sum_losses", torch.zeros(self.n_train_groups)
+        )  # historical loss sum over category
+        self.register_buffer("count_cat", torch.ones(self.n_train_groups))
 
     def forward(self, x, y, group_ids, clean_ids=None, weights=None):
         if clean_ids is None:
             clean_ids = group_ids
-        ind_loss = bce(x, y, reduction='none')  # B
+        ind_loss = bce(x, y, reduction="none")  # B
         acc = compute_binary_group_acc(x, y, clean_ids, self.n_test_groups, self.device)
 
         if not self.training:
@@ -33,10 +35,16 @@ class GreedyGroupDRO(nn.Module):
         group_loss, group_counts = self.compute_group_loss(ind_loss, group_ids)
         reduce_group_losses = group_loss / (group_counts + 1e-8)
         valid_index = reduce_group_losses.ne(0)
-        self.sum_losses[valid_index] = self.sum_losses[valid_index].mul(1 - self.EMA_alpha).add(
-            reduce_group_losses[valid_index], alpha=self.EMA_alpha)
-        self.count_cat[valid_index] = self.count_cat[valid_index].mul(1 - 0.05).add(group_counts[valid_index],
-                                                                                    alpha=0.05)
+        self.sum_losses[valid_index] = (
+            self.sum_losses[valid_index]
+            .mul(1 - self.EMA_alpha)
+            .add(reduce_group_losses[valid_index], alpha=self.EMA_alpha)
+        )
+        self.count_cat[valid_index] = (
+            self.count_cat[valid_index]
+            .mul(1 - 0.05)
+            .add(group_counts[valid_index], alpha=0.05)
+        )
         self.update_mw()
         loss = (ind_loss * self.h_fun[group_ids]).mean()
         return loss, acc

@@ -3,19 +3,29 @@ import torch.nn as nn
 
 
 class DROEGLoss(nn.Module):
-    def __init__(self, model, n_groups, n_domains, step_size, split_with_group=True, normalize=False):
+    def __init__(
+        self,
+        model,
+        n_groups,
+        n_domains,
+        step_size,
+        split_with_group=True,
+        normalize=False,
+    ):
         super(DROEGLoss, self).__init__()
         self.model = model
-        self.criterion = nn.CrossEntropyLoss(reduction='none')
+        self.criterion = nn.CrossEntropyLoss(reduction="none")
         self.lr = step_size
         self.n_groups = n_groups
         self.n_domains = n_domains
         self.split_with_group = split_with_group
         self.normalize = normalize
         if self.split_with_group:
-            self.register_buffer('adv_probs', torch.ones(self.n_groups) / self.n_groups)
+            self.register_buffer("adv_probs", torch.ones(self.n_groups) / self.n_groups)
         else:
-            self.register_buffer('adv_probs', torch.ones(self.n_domains) / self.n_domains)
+            self.register_buffer(
+                "adv_probs", torch.ones(self.n_domains) / self.n_domains
+            )
 
     def reset(self):
         self.adv_prob.fill_(1.0)
@@ -36,7 +46,9 @@ class DROEGLoss(nn.Module):
             s = d
         # n_groups
         gdro_counts = zero_vec.scatter_add(0, s, one_vec).float()
-        gdro_losses = zero_vec.scatter_add(0, s, losses).div(gdro_counts + (gdro_counts == 0).float())
+        gdro_losses = zero_vec.scatter_add(0, s, losses).div(
+            gdro_counts + (gdro_counts == 0).float()
+        )
 
         if self.training:
             adjusted_losses = gdro_losses.detach()
@@ -56,8 +68,12 @@ class DROEGLoss(nn.Module):
 
             preds = outputs.argmax(dim=1)
             corrects = preds.eq(y).float()
-            acc = corrects.sum().mul(100. / batch_size)
-            group_accs = zero_vec.scatter_add(0, g, corrects).mul(100.).div(group_counts + (group_counts == 0).float())
+            acc = corrects.sum().mul(100.0 / batch_size)
+            group_accs = (
+                zero_vec.scatter_add(0, g, corrects)
+                .mul(100.0)
+                .div(group_counts + (group_counts == 0).float())
+            )
 
         return robust_loss, acc, group_losses, group_accs, group_counts
 

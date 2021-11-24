@@ -66,7 +66,9 @@ class SequenceGenerator(nn.Module):
         self.eos = tgt_dict.eos() if eos is None else eos
         self.symbols_to_strip_from_output = (
             symbols_to_strip_from_output.union({self.eos})
-            if symbols_to_strip_from_output is not None else {self.eos})
+            if symbols_to_strip_from_output is not None
+            else {self.eos}
+        )
         self.vocab_size = len(tgt_dict)
         self.beam_size = beam_size
         # the max beam size is the dictionary size - 1, since we never select pad
@@ -89,7 +91,9 @@ class SequenceGenerator(nn.Module):
         # We only need to set src_lengths in LengthConstrainedBeamSearch.
         # As a module attribute, setting it would break in multithread
         # settings when the model is shared.
-        self.should_set_src_lengths = hasattr(self.search, 'needs_src_lengths') and self.search.needs_src_lengths
+        self.should_set_src_lengths = (
+            hasattr(self.search, "needs_src_lengths") and self.search.needs_src_lengths
+        )
 
         self.model.eval()
 
@@ -177,15 +181,21 @@ class SequenceGenerator(nn.Module):
         )
         net_input = sample["net_input"]
 
-        if 'src_tokens' in net_input:
-            src_tokens = net_input['src_tokens']
+        if "src_tokens" in net_input:
+            src_tokens = net_input["src_tokens"]
             # length of the source text being the character length except EndOfSentence and pad
-            src_lengths = (src_tokens.ne(self.eos) & src_tokens.ne(self.pad)).long().sum(dim=1)
-        elif 'source' in net_input:
-            src_tokens = net_input['source']
-            src_lengths = net_input['padding_mask'].size(-1) - net_input['padding_mask'].sum(-1) if net_input['padding_mask'] is not None else torch.tensor(src_tokens.size(-1))
+            src_lengths = (
+                (src_tokens.ne(self.eos) & src_tokens.ne(self.pad)).long().sum(dim=1)
+            )
+        elif "source" in net_input:
+            src_tokens = net_input["source"]
+            src_lengths = (
+                net_input["padding_mask"].size(-1) - net_input["padding_mask"].sum(-1)
+                if net_input["padding_mask"] is not None
+                else torch.tensor(src_tokens.size(-1))
+            )
         else:
-            raise Exception('expected src_tokens or source in net input')
+            raise Exception("expected src_tokens or source in net input")
 
         # bsz: total number of sentences in beam
         input_size = src_tokens.size()
@@ -702,10 +712,7 @@ class EnsembleModel(nn.Module):
     def forward_encoder(self, net_input: Dict[str, Tensor]):
         if not self.has_encoder():
             return None
-        return [
-            model.encoder.forward_torchscript(net_input)
-            for model in self.models
-        ]
+        return [model.encoder.forward_torchscript(net_input) for model in self.models]
 
     @torch.jit.export
     def forward_decoder(
@@ -828,9 +835,12 @@ class SequenceGeneratorWithAlignment(SequenceGenerator):
         src_tokens = sample["net_input"]["src_tokens"]
         bsz = src_tokens.shape[0]
         beam_size = self.beam_size
-        src_tokens, src_lengths, prev_output_tokens, tgt_tokens = self._prepare_batch_for_alignment(
-            sample, finalized
-        )
+        (
+            src_tokens,
+            src_lengths,
+            prev_output_tokens,
+            tgt_tokens,
+        ) = self._prepare_batch_for_alignment(sample, finalized)
         if any(getattr(m, "full_context_alignment", False) for m in self.model.models):
             attn = self.model.forward_align(src_tokens, src_lengths, prev_output_tokens)
         else:
@@ -840,9 +850,9 @@ class SequenceGeneratorWithAlignment(SequenceGenerator):
             ]
 
         if src_tokens.device != "cpu":
-            src_tokens = src_tokens.to('cpu')
-            tgt_tokens = tgt_tokens.to('cpu')
-            attn = [i.to('cpu') for i in attn]
+            src_tokens = src_tokens.to("cpu")
+            tgt_tokens = tgt_tokens.to("cpu")
+            attn = [i.to("cpu") for i in attn]
 
         # Process the attn matrix to extract hard alignments.
         for i in range(bsz * beam_size):

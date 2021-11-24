@@ -8,22 +8,17 @@ from scipy.interpolate import make_interp_spline, BSpline
 labelsize = 15
 legendsize = 13
 
-mpl.rcParams['xtick.labelsize'] = labelsize
-mpl.rcParams['ytick.labelsize'] = labelsize
-mpl.rcParams['font.size'] = legendsize
+mpl.rcParams["xtick.labelsize"] = labelsize
+mpl.rcParams["ytick.labelsize"] = labelsize
+mpl.rcParams["font.size"] = legendsize
 
-plt.rcParams.update({
-    "text.usetex": True,
-    "font.family": "sans-serif",
-    "font.sans-serif": ["Helvetica"]})
+plt.rcParams.update(
+    {"text.usetex": True, "font.family": "sans-serif", "font.sans-serif": ["Helvetica"]}
+)
 
-label_dict = {
-    'contradict': 0,
-    'entailment': 1,
-    'neutral': 2
-}
+label_dict = {"contradict": 0, "entailment": 1, "neutral": 2}
 reverse_label_dict = {v: k for k, v in label_dict.items()}
-reverse_feature_dict = {0:"no neg", 1:"neg 1", 2:"neg 2"}
+reverse_feature_dict = {0: "no neg", 1: "neg 1", 2: "neg 2"}
 opt_dir = "/Users/chuntinz/Documents/research/fairseq-gdro/process/figs"
 
 
@@ -58,7 +53,7 @@ def read_outer_log(path):
 
 
 def read_inner_log(path):
-    inner_weights = defaultdict(lambda : defaultdict(list))
+    inner_weights = defaultdict(lambda: defaultdict(list))
     with open(path, "r") as fin:
         for line in fin:
             if line.startswith("Update"):
@@ -74,7 +69,7 @@ def read_inner_log(path):
 
 
 def read_log(path):
-    outer_weights = defaultdict(lambda :defaultdict(list))
+    outer_weights = defaultdict(lambda: defaultdict(list))
     epoch = 1
     with open(path, "r") as fin:
         for line in fin:
@@ -85,7 +80,7 @@ def read_log(path):
                 for idx, weight in enumerate(weights):
                     outer_weights[epoch][idx].append(float(weight.strip()))
 
-    results = defaultdict(lambda :defaultdict(list))
+    results = defaultdict(lambda: defaultdict(list))
     for eid in sorted(outer_weights.keys()):
         for gid in range(len(outer_weights[eid].keys())):
             fl_id = map_gid_to_feature_label_id(gid)
@@ -108,7 +103,7 @@ def plot_beta_line(weights, weights_pure_greedy):
     fig, axes = plt.subplots(2, num_features)
     fig.set_size_inches(28, 8)
     legends = [reverse_label_dict[i] for i in range(3)]
-    colors = ['darkblue', 'darkred', 'dimgrey']
+    colors = ["darkblue", "darkred", "dimgrey"]
 
     for fid in range(num_features):
         for lid in range(len(weights_pure_greedy[fid])):
@@ -116,15 +111,20 @@ def plot_beta_line(weights, weights_pure_greedy):
             y = weights_pure_greedy[fid][lid]
             xx, yy = get_smooth(x, y)
             if lid == 0:
-                axes[0][fid].plot(xx, yy, 'o-', markersize=1, color=colors[lid])
+                axes[0][fid].plot(xx, yy, "o-", markersize=1, color=colors[lid])
             else:
-                axes[0][fid].plot(xx, yy, 'o-', markersize=1, color=colors[lid], alpha=0.6)
+                axes[0][fid].plot(
+                    xx, yy, "o-", markersize=1, color=colors[lid], alpha=0.6
+                )
         # axes[0][fid].set_ylim(0, 2.5)
-        axes[0][fid].grid(ls='-.', lw=0.2)
+        axes[0][fid].grid(ls="-.", lw=0.2)
         if fid == 2:
-            axes[0][fid].legend(legends, loc='best')
+            axes[0][fid].legend(legends, loc="best")
         if fid == 0:
-            axes[0][fid].set(title="Attribute={}".format(reverse_feature_dict[fid]), ylabel="average weight (group DRO)")
+            axes[0][fid].set(
+                title="Attribute={}".format(reverse_feature_dict[fid]),
+                ylabel="average weight (group DRO)",
+            )
         else:
             axes[0][fid].set(title="Attribute={}".format(reverse_feature_dict[fid]))
 
@@ -133,18 +133,18 @@ def plot_beta_line(weights, weights_pure_greedy):
             x = np.arange(len(weights[fid][lid]))
             y = weights[fid][lid]
             xx, yy = get_smooth(x, y)
-            axes[1][fid].plot(xx, yy, 'o-', markersize=1, color=colors[lid])
+            axes[1][fid].plot(xx, yy, "o-", markersize=1, color=colors[lid])
         # axes[1][fid].set_ylim(0, 5)
-        axes[1][fid].grid(ls='-.', lw=0.2)
+        axes[1][fid].grid(ls="-.", lw=0.2)
         if fid == 2:
-            axes[1][-1].legend(legends, loc='best')
+            axes[1][-1].legend(legends, loc="best")
         if fid == 0:
             axes[1][fid].set(xlabel="train epochs", ylabel="average weight (Ours)")
         else:
             axes[1][fid].set(xlabel="train epochs")
 
     plt.subplots_adjust(wspace=0.07, hspace=0.11)
-    fig.savefig(os.path.join(opt_dir, "plot_hier_weights.pdf"), bbox_inches='tight')
+    fig.savefig(os.path.join(opt_dir, "plot_hier_weights.pdf"), bbox_inches="tight")
 
 
 def convert_dict_to_mat(weight):
@@ -155,6 +155,7 @@ def convert_dict_to_mat(weight):
         for lid in range(n):
             mat[fid][lid] = np.mean(weight[fid][lid])
     return mat
+
 
 def plot_beta_heatmap(weights, weights_pure_greedy):
     mat_h_greedy = convert_dict_to_mat(weights)
@@ -206,29 +207,27 @@ def plot_beta_heatmap(weights, weights_pure_greedy):
         ax.set_yticklabels(row_labels)
 
         # Let the horizontal axes labeling appear on top.
-        ax.tick_params(top=True, bottom=False,
-                       labeltop=True, labelbottom=False)
+        ax.tick_params(top=True, bottom=False, labeltop=True, labelbottom=False)
 
         # Rotate the tick labels and set their alignment.
-        plt.setp(ax.get_xticklabels(), rotation=-30, ha="right",
-                 rotation_mode="anchor")
+        plt.setp(ax.get_xticklabels(), rotation=-30, ha="right", rotation_mode="anchor")
 
         # Turn spines off and create white grid.
         for edge, spine in ax.spines.items():
             spine.set_visible(False)
 
-        ax.set_xticks(np.arange(data.shape[1] + 1) - .5, minor=True)
-        ax.set_yticks(np.arange(data.shape[0] + 1) - .5, minor=True)
-        ax.grid(which="minor", color="w", linestyle='-', linewidth=3)
+        ax.set_xticks(np.arange(data.shape[1] + 1) - 0.5, minor=True)
+        ax.set_yticks(np.arange(data.shape[0] + 1) - 0.5, minor=True)
+        ax.grid(which="minor", color="w", linestyle="-", linewidth=3)
         ax.tick_params(which="minor", bottom=False, left=False)
 
         ax.set_title(title)
         return im, cbar
 
-    im, _ = heatmap(mat_greedy, axes[0], "weights (group DRO)", cmap='RdPu')
-    im, _ = heatmap(mat_h_greedy, axes[1], "weights (GC-DRO)", cmap='RdPu')
+    im, _ = heatmap(mat_greedy, axes[0], "weights (group DRO)", cmap="RdPu")
+    im, _ = heatmap(mat_h_greedy, axes[1], "weights (GC-DRO)", cmap="RdPu")
     # plt.subplots_adjust(wspace=0.07, hspace=0.0)
-    fig.savefig(os.path.join(opt_dir, "plot_hier_heatmap.pdf"), bbox_inches='tight')
+    fig.savefig(os.path.join(opt_dir, "plot_hier_heatmap.pdf"), bbox_inches="tight")
 
 
 def analyze_hierarchincal_weights(heatmap=False):
@@ -236,7 +235,9 @@ def analyze_hierarchincal_weights(heatmap=False):
     outer_weights = read_outer_log(os.path.join(root, "outer_log.txt"))
     inner_weights = read_inner_log(os.path.join(root, "inter_log.txt"))
 
-    results = defaultdict(lambda :defaultdict(list))  # feature_id: label_id: [history_avg_weights:#num_updates]
+    results = defaultdict(
+        lambda: defaultdict(list)
+    )  # feature_id: label_id: [history_avg_weights:#num_updates]
     for group_id, label in inner_weights[1].keys():
         fid = map_to_feature_id(group_id, label)
         group_outer_ws = np.mean([wlist[group_id] for wlist in outer_weights[0]])
@@ -250,9 +251,15 @@ def analyze_hierarchincal_weights(heatmap=False):
             continue
         outer_ws = outer_weights[inner_update]
         for group_id, label in inner_weights[inner_update].keys():
-            group_outer_ws = [wlist[group_id] for wlist in outer_ws]  # m times logs of outer weights
+            group_outer_ws = [
+                wlist[group_id] for wlist in outer_ws
+            ]  # m times logs of outer weights
             fid = map_to_feature_id(group_id, label)
-            average_instance_weights = [iw * ow for iw in inner_weights[inner_update][(group_id, label)] for ow in group_outer_ws]
+            average_instance_weights = [
+                iw * ow
+                for iw in inner_weights[inner_update][(group_id, label)]
+                for ow in group_outer_ws
+            ]
             average_instance_weights = np.mean(average_instance_weights)
             results[fid][label].append(average_instance_weights)
 
@@ -274,18 +281,24 @@ def plot_ablations():
     b = [0.1, 0.2, 0.3, 0.5, 0.7]
     fix_a_shift = [75.18, 75.32, 71.88, 71.28, 71.10]  # a = 0.5
     fix_a_clean = [54.92, 68.70, 75.14, 77.82, 76.58]  # a = 0.2
-    fix_a_legends = [r"$\alpha$=0.2, clean partition", r"$\alpha$=0.5, imperfect partition"]
+    fix_a_legends = [
+        r"$\alpha$=0.2, clean partition",
+        r"$\alpha$=0.5, imperfect partition",
+    ]
 
     a = [0.1, 0.2, 0.3, 0.5, 0.7]
     fix_b_shift = [74.26, 74.26, 73.94, 75.32, 74.76]  # b = 0.2
     fix_b_clean = [76.82, 77.82, 74.84, 76.50, 72.96]  # b = 0.5
-    fix_b_legends = [r"$\beta$=0.5, clean partition", r"$\beta$=0.2, imperfect partition"]
+    fix_b_legends = [
+        r"$\beta$=0.5, clean partition",
+        r"$\beta$=0.2, imperfect partition",
+    ]
 
     colors = ["darkblue", "darkred"]
-    axes[0].plot(b, fix_a_clean, 'o-', markersize=1.5, color=colors[0])
-    axes[0].plot(b, fix_a_shift, 'o-', markersize=1.5, color=colors[1])
-    axes[0].grid(ls='-.', lw=0.2)
-    axes[0].legend(fix_a_legends, loc='best')
+    axes[0].plot(b, fix_a_clean, "o-", markersize=1.5, color=colors[0])
+    axes[0].plot(b, fix_a_shift, "o-", markersize=1.5, color=colors[1])
+    axes[0].grid(ls="-.", lw=0.2)
+    axes[0].legend(fix_a_legends, loc="best")
     axes[0].set_ylim(top=80)
     bb_shift = [0.09, 0.17, 0.3, 0.5, 0.66]
     ffix_a_shift = [73.8, 75.9, 71.88, 71.78, 69.7]  # a = 0.5
@@ -296,10 +309,10 @@ def plot_ablations():
     axes[0].set_xticks(np.arange(0.1, 0.8, 0.1))
     axes[0].set(xlabel=r"$\beta$", ylabel="Robust Accuray")
 
-    axes[1].plot(a, fix_b_clean, 'o-', markersize=1.5, color=colors[0])
-    axes[1].plot(a, fix_b_shift, 'o-', markersize=1.5, color=colors[1])
-    axes[1].grid(ls='-.', lw=0.2)
-    axes[1].legend(fix_b_legends, loc='best')
+    axes[1].plot(a, fix_b_clean, "o-", markersize=1.5, color=colors[0])
+    axes[1].plot(a, fix_b_shift, "o-", markersize=1.5, color=colors[1])
+    axes[1].grid(ls="-.", lw=0.2)
+    axes[1].legend(fix_b_legends, loc="best")
     axes[1].set(xlabel=r"$\alpha$", ylabel="Robust Accuray")
     axes[1].set_ylim(top=79)
     aa_shift = [0.09, 0.2, 0.29, 0.48, 0.7]
@@ -310,7 +323,8 @@ def plot_ablations():
     annotate(axes[1], aa_shift, ffix_b_clean, list(map(str, fix_b_clean)))
     axes[1].set_xticks(np.arange(0.1, 0.8, 0.1))
     # plt.subplots_adjust(wspace=0.07, hspace=0)
-    fig.savefig(os.path.join(opt_dir, "ablation.pdf"), bbox_inches='tight')
+    fig.savefig(os.path.join(opt_dir, "ablation.pdf"), bbox_inches="tight")
+
 
 ## Plot the clean group weights along training epoches
 # analyze_hierarchincal_weights()
@@ -319,4 +333,4 @@ def plot_ablations():
 analyze_hierarchincal_weights(True)
 
 ## Plot ablations
-#plot_ablations()
+# plot_ablations()

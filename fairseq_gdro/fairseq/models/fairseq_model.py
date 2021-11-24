@@ -123,22 +123,22 @@ class BaseFairseqModel(nn.Module):
         """State from trainer to pass along to model at every update."""
 
         def _apply(m):
-            if hasattr(m, 'set_num_updates') and m != self:
+            if hasattr(m, "set_num_updates") and m != self:
                 m.set_num_updates(num_updates)
+
         self.apply(_apply)
 
     def prepare_for_inference_(self, args):
         """Prepare model for inference."""
         kwargs = {}
-        kwargs['beamable_mm_beam_size'] = (
-            None if getattr(args, 'no_beamable_mm', False)
-            else getattr(args, 'beam', 5)
+        kwargs["beamable_mm_beam_size"] = (
+            None if getattr(args, "no_beamable_mm", False) else getattr(args, "beam", 5)
         )
-        kwargs['need_attn'] = getattr(args, 'print_alignment', False)
-        if hasattr(args, 'retain_dropout'):
-            kwargs['retain_dropout'] = args.retain_dropout
-            kwargs['retain_dropout_modules'] = getattr(
-                args, 'retain_dropout_modules', None
+        kwargs["need_attn"] = getattr(args, "print_alignment", False)
+        if hasattr(args, "retain_dropout"):
+            kwargs["retain_dropout"] = args.retain_dropout
+            kwargs["retain_dropout_modules"] = getattr(
+                args, "retain_dropout_modules", None
             )
         self.make_generation_fast_(**kwargs)
 

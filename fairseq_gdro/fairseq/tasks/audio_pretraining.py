@@ -24,9 +24,7 @@ class LabelEncoder(object):
 
 @register_task("audio_pretraining")
 class AudioPretrainingTask(FairseqTask):
-    """
-
-    """
+    """ """
 
     @staticmethod
     def add_args(parser):

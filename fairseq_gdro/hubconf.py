@@ -11,10 +11,10 @@ from fairseq.models import MODEL_REGISTRY
 
 
 dependencies = [
-    'numpy',
-    'regex',
-    'requests',
-    'torch',
+    "numpy",
+    "regex",
+    "requests",
+    "torch",
 ]
 
 
@@ -27,14 +27,15 @@ except (ImportError, ModuleNotFoundError):
         import cython
         import os
         from setuptools import sandbox
+
         sandbox.run_setup(
-            os.path.join(os.path.dirname(__file__), 'setup.py'),
-            ['build_ext', '--inplace'],
+            os.path.join(os.path.dirname(__file__), "setup.py"),
+            ["build_ext", "--inplace"],
         )
     except (ImportError, ModuleNotFoundError):
         print(
-            'Unable to build Cython components. Please make sure Cython is '
-            'installed if the torch.hub model you are loading depends on it.'
+            "Unable to build Cython components. Please make sure Cython is "
+            "installed if the torch.hub model you are loading depends on it."
         )
 
 

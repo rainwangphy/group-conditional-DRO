@@ -127,7 +127,7 @@ def log_scalar(
         round (Optional[int]): number of digits to round to when displaying
     """
     if torch.is_tensor(value):
-       value = value.float()
+        value = value.float()
     for agg in get_active_aggregators():
         if key not in agg:
             agg.add_meter(key, AverageMeter(round=round), priority)
@@ -148,7 +148,9 @@ def log_derived(key: str, fn: Callable[[MetersDict], float], priority: int = 20)
             agg.add_meter(key, MetersDict._DerivedMeter(fn), priority)
 
 
-def log_derived_with_key(key: str, fn: Callable[[MetersDict], float], meter_key: str, priority: int = 20):
+def log_derived_with_key(
+    key: str, fn: Callable[[MetersDict], float], meter_key: str, priority: int = 20
+):
     """Log a scalar value derived from other meters.
 
     Args:
@@ -200,7 +202,7 @@ def log_start_time(key: str, priority: int = 40, round: Optional[int] = None):
         agg[key].start()
 
 
-def log_stop_time(key: str, weight: float = 0., prehook=None):
+def log_stop_time(key: str, weight: float = 0.0, prehook=None):
     """Log the duration of some event in seconds.
 
     The duration will be computed since :func:`log_start_time` was called.
@@ -295,10 +297,7 @@ def get_smoothed_values(name: str) -> Dict[str, float]:
 
 
 def state_dict():
-    return OrderedDict([
-        (name, agg.state_dict())
-        for name, agg in _aggregators.items()
-    ])
+    return OrderedDict([(name, agg.state_dict()) for name, agg in _aggregators.items()])
 
 
 def load_state_dict(state_dict):

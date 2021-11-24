@@ -12,11 +12,10 @@ from fairseq import metrics, utils
 
 
 class FairseqCriterion(_Loss):
-
     def __init__(self, task):
         super().__init__()
         self.task = task
-        if hasattr(task, 'target_dictionary'):
+        if hasattr(task, "target_dictionary"):
             tgt_dict = task.target_dictionary
             self.padding_idx = tgt_dict.pad() if tgt_dict is not None else -100
 
@@ -40,12 +39,12 @@ class FairseqCriterion(_Loss):
             ):
                 # we haven't implemented inference for these argument types,
                 # but PRs welcome :)
-                raise NotImplementedError('{} not supported'.format(p.kind))
+                raise NotImplementedError("{} not supported".format(p.kind))
 
             assert p.kind in {p.POSITIONAL_OR_KEYWORD, p.KEYWORD_ONLY}
 
-            if p.name == 'task':
-                init_args['task'] = task
+            if p.name == "task":
+                init_args["task"] = task
             elif hasattr(args, p.name):
                 init_args[p.name] = getattr(args, p.name)
             elif p.default != p.empty:
@@ -75,8 +74,8 @@ class FairseqCriterion(_Loss):
     ) -> Dict[str, Any]:
         """Aggregate logging outputs from data parallel training."""
         utils.deprecation_warning(
-            'The aggregate_logging_outputs API is deprecated. '
-            'Please use the reduce_metrics API instead.'
+            "The aggregate_logging_outputs API is deprecated. "
+            "Please use the reduce_metrics API instead."
         )
         raise NotImplementedError
 
@@ -84,12 +83,12 @@ class FairseqCriterion(_Loss):
     def reduce_metrics(cls, logging_outputs: List[Dict[str, Any]]) -> None:
         """Aggregate logging outputs from data parallel training."""
         utils.deprecation_warning(
-            'Criterions should implement the reduce_metrics API. '
-            'Falling back to deprecated aggregate_logging_outputs API.'
+            "Criterions should implement the reduce_metrics API. "
+            "Falling back to deprecated aggregate_logging_outputs API."
         )
         agg_logging_outputs = cls.aggregate_logging_outputs(logging_outputs)
         for k, v in agg_logging_outputs.items():
-            if k in {'nsentences', 'ntokens', 'sample_size'}:
+            if k in {"nsentences", "ntokens", "sample_size"}:
                 continue
             metrics.log_scalar(k, v)
 
@@ -104,15 +103,14 @@ class FairseqCriterion(_Loss):
 
 
 class LegacyFairseqCriterion(FairseqCriterion):
-
     def __init__(self, args, task):
         super().__init__(task=task)
         self.args = args
 
         utils.deprecation_warning(
-            'Criterions should take explicit arguments instead of an '
-            'argparse.Namespace object, please update your criterion by '
-            'extending FairseqCriterion instead of LegacyFairseqCriterion.'
+            "Criterions should take explicit arguments instead of an "
+            "argparse.Namespace object, please update your criterion by "
+            "extending FairseqCriterion instead of LegacyFairseqCriterion."
         )
 
     @classmethod

@@ -8,8 +8,8 @@
 #SBATCH --mem=10g
 #SBATCH --time=0
 
-module load cuda-10.0
-source activate dro
+#module load cuda-10.0
+#source activate dro
 
 seeds=(15213 17747 17 53)
 for run in 0 1 2 3; do

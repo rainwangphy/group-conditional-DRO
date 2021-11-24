@@ -237,7 +237,9 @@ class Sampling(Search):
         # sample
         if step == 0:
             indices_buf = torch.multinomial(
-                probs.view(bsz, -1), beam_size, replacement=True,
+                probs.view(bsz, -1),
+                beam_size,
+                replacement=True,
             ).view(bsz, beam_size)
         else:
             indices_buf = torch.multinomial(
@@ -251,9 +253,7 @@ class Sampling(Search):
             probs = probs.expand(bsz, beam_size, -1)
 
         # gather scores
-        scores_buf = torch.gather(
-            probs, dim=2, index=indices_buf.unsqueeze(-1)
-        )
+        scores_buf = torch.gather(probs, dim=2, index=indices_buf.unsqueeze(-1))
         scores_buf = scores_buf.log_().view(bsz, -1)
 
         # remap indices if using top-k or top-P sampling

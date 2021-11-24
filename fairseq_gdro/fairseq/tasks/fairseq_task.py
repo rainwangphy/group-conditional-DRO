@@ -84,7 +84,7 @@ class FairseqTask(object):
         return cls(args, **kwargs)
 
     def has_sharded_data(self, split):
-        return (os.pathsep in getattr(self.args, 'data', ''))
+        return os.pathsep in getattr(self.args, "data", "")
 
     def load_dataset(self, split, combine=False, **kwargs):
         """Load a given dataset split.
@@ -135,14 +135,18 @@ class FairseqTask(object):
         indices, ignored = dataset.filter_indices_by_size(indices, max_positions)
         if len(ignored) > 0:
             if not ignore_invalid_inputs:
-                raise Exception((
-                    'Size of sample #{} is invalid (={}) since max_positions={}, '
-                    'skip this example with --skip-invalid-size-inputs-valid-test'
-                ).format(ignored[0], dataset.size(ignored[0]), max_positions))
-            logger.warning((
-                '{} samples have invalid sizes and will be skipped, '
-                'max_positions={}, first few sample ids={}'
-            ).format(len(ignored), max_positions, ignored[:10]))
+                raise Exception(
+                    (
+                        "Size of sample #{} is invalid (={}) since max_positions={}, "
+                        "skip this example with --skip-invalid-size-inputs-valid-test"
+                    ).format(ignored[0], dataset.size(ignored[0]), max_positions)
+                )
+            logger.warning(
+                (
+                    "{} samples have invalid sizes and will be skipped, "
+                    "max_positions={}, first few sample ids={}"
+                ).format(len(ignored), max_positions, ignored[:10])
+            )
         return indices
 
     def can_reuse_epoch_itr(self, dataset):
@@ -150,7 +154,7 @@ class FairseqTask(object):
         # hasn't disabled it. We default to ``False`` here, although in practice
         # this will be ``True`` for most datasets that inherit from
         # ``FairseqDataset`` due to the base implementation there.
-        return getattr(dataset, 'can_reuse_epoch_itr_across_epochs', False)
+        return getattr(dataset, "can_reuse_epoch_itr_across_epochs", False)
 
     def get_batch_iterator(
         self,
@@ -202,7 +206,7 @@ class FairseqTask(object):
         can_reuse_epoch_itr = self.can_reuse_epoch_itr(dataset)
 
         if can_reuse_epoch_itr and dataset in self.dataset_to_epoch_iter:
-            logger.debug('reusing EpochBatchIterator for epoch {}'.format(epoch))
+            logger.debug("reusing EpochBatchIterator for epoch {}".format(epoch))
             return self.dataset_to_epoch_iter[dataset]
 
         assert isinstance(dataset, FairseqDataset)
@@ -240,7 +244,7 @@ class FairseqTask(object):
             shard_id=shard_id,
             num_workers=num_workers,
             epoch=epoch,
-            buffer_size=getattr(self.args, 'data_buffer_size', 0),
+            buffer_size=getattr(self.args, "data_buffer_size", 0),
         )
 
         if can_reuse_epoch_itr:
@@ -260,8 +264,9 @@ class FairseqTask(object):
             a :class:`~fairseq.models.BaseFairseqModel` instance
         """
         from fairseq import models, quantization_utils
+
         model = models.build_model(args, self)
-        if getattr(args, 'tpu', False):
+        if getattr(args, "tpu", False):
             model.prepare_for_tpu_()
         model = quantization_utils.quantize_model_scalar(model, args)
         return model
@@ -282,8 +287,7 @@ class FairseqTask(object):
         return criterions.build_criterion(args, self)
 
     def build_generator(
-        self, models, args,
-        seq_gen_cls=None, extra_gen_cls_kwargs=None
+        self, models, args, seq_gen_cls=None, extra_gen_cls_kwargs=None
     ):
         if getattr(args, "score_reference", False):
             from fairseq.sequence_scorer import SequenceScorer

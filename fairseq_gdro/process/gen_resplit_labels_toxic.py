@@ -32,11 +32,11 @@ def map_to_finegrained_labels(label_id, attribute_id, num_attributes):
 for dname in datasets:
     print(dname)
     if dname == "davidson":
-        label_dict = {"offensive":0, "neither":1, "hate":2}
+        label_dict = {"offensive": 0, "neither": 1, "hate": 2}
     else:
-        label_dict = {"abusive":0, "spam":1, "normal":2, "hateful":3}
+        label_dict = {"abusive": 0, "spam": 1, "normal": 2, "hateful": 3}
 
-    attr_dict = {'other':0, 'aav':1, 'hispanic':2, 'white':3}
+    attr_dict = {"other": 0, "aav": 1, "hispanic": 2, "white": 3}
     raw_dir = os.path.join(root, dname, "raw")
     split_dir = os.path.join(root, dname, "split_raw")
 
@@ -46,7 +46,11 @@ for dname in datasets:
     all_labels = defaultdict(int)
     for split in ["train"]:
         data = read_tsv(os.path.join(raw_dir, "{}.tsv".format(split)))
-        with open(os.path.join(split_dir, "{}.resplit.labels".format(split)), "w", encoding="utf-8") as flabels:
+        with open(
+            os.path.join(split_dir, "{}.resplit.labels".format(split)),
+            "w",
+            encoding="utf-8",
+        ) as flabels:
             for label, att, sent in data:
                 original_label = label.strip()
                 label = label_dict[label.strip()]

@@ -32,11 +32,11 @@ def map_to_finegrained_labels(label_id, attribute_id, num_attributes):
 for dname in datasets:
     print(dname)
     if dname == "davidson":
-        label_dict = {"offensive":0, "neither":1, "hate":2}
+        label_dict = {"offensive": 0, "neither": 1, "hate": 2}
     else:
-        label_dict = {"abusive":0, "spam":1, "normal":2, "hateful":3}
+        label_dict = {"abusive": 0, "spam": 1, "normal": 2, "hateful": 3}
 
-    attr_dict = {'other':0, 'aav':1, 'hispanic':2, 'white':3}
+    attr_dict = {"other": 0, "aav": 1, "hispanic": 2, "white": 3}
     raw_dir = os.path.join(root, dname, "raw")
     split_dir = os.path.join(root, dname, "split_raw")
 
@@ -47,9 +47,13 @@ for dname in datasets:
     fg_label_counts = dict()
     for split in ["train", "valid", "test"]:
         data = read_tsv(os.path.join(raw_dir, "{}.tsv".format(split)))
-        with open(os.path.join(split_dir, "{}.sent0".format(split)), "w", encoding="utf-8") as ftxt, \
-            open(os.path.join(split_dir, "{}.label".format(split)), "w", encoding="utf-8") as flabel, \
-            open(os.path.join(split_dir, "{}.fg.labels".format(split)), "w", encoding="utf-8") as ffglabel:
+        with open(
+            os.path.join(split_dir, "{}.sent0".format(split)), "w", encoding="utf-8"
+        ) as ftxt, open(
+            os.path.join(split_dir, "{}.label".format(split)), "w", encoding="utf-8"
+        ) as flabel, open(
+            os.path.join(split_dir, "{}.fg.labels".format(split)), "w", encoding="utf-8"
+        ) as ffglabel:
             for label, att, sent in data:
                 ftxt.write(sent.strip() + "\n")
                 original_label = label.strip()
@@ -70,5 +74,7 @@ for dname in datasets:
 
                 ffglabel.write(str(fglabel) + "\n")
     print(all_labels)
-    sorted_counts = OrderedDict({k: v for k, v in sorted(fg_label_counts.items(), key=lambda item: item[1])})
+    sorted_counts = OrderedDict(
+        {k: v for k, v in sorted(fg_label_counts.items(), key=lambda item: item[1])}
+    )
     print(sorted_counts)

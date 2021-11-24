@@ -107,7 +107,11 @@ def read_log(path, fout):
                     train_fg_acc[k].append(v)
                 train_avg_acc.append(avg_acc)
 
-    fout.write("epoch {} with best worst group loss = {}\n".format(best_epoch, max_worst_acc_valid))
+    fout.write(
+        "epoch {} with best worst group loss = {}\n".format(
+            best_epoch, max_worst_acc_valid
+        )
+    )
     if len(test_fg_acc) > 0:
         write(test_fg_acc, test_avg_acc, "test")
     if len(valid_fg_acc) > 0:
@@ -202,7 +206,11 @@ def main(args):
             fg_accs[idx] = value
     worst_acc = min(fg_accs.values())
     print("Worst_acc {}\n".format(worst_acc))
-    log_opt.write("FG_acc {}\n".format(" ".join([str(fg_accs[idx]) for idx in range(len(fg_accs))])))
+    log_opt.write(
+        "FG_acc {}\n".format(
+            " ".join([str(fg_accs[idx]) for idx in range(len(fg_accs))])
+        )
+    )
     log_opt.write("Worst_acc {}\n".format(worst_acc))
     log_opt.close()
 

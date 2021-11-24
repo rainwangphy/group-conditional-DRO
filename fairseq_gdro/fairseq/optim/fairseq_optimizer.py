@@ -9,7 +9,6 @@ from fairseq import utils
 
 
 class FairseqOptimizer(object):
-
     def __init__(self, args):
         super().__init__()
         self.args = args
@@ -22,10 +21,10 @@ class FairseqOptimizer(object):
     @property
     def optimizer(self):
         """Return a torch.optim.optimizer.Optimizer instance."""
-        if not hasattr(self, '_optimizer'):
+        if not hasattr(self, "_optimizer"):
             raise NotImplementedError
         if not isinstance(self._optimizer, torch.optim.Optimizer):
-            raise ValueError('_optimizer must be an instance of torch.optim.Optimizer')
+            raise ValueError("_optimizer must be an instance of torch.optim.Optimizer")
         return self._optimizer
 
     @property
@@ -42,7 +41,7 @@ class FairseqOptimizer(object):
     def params(self):
         """Return an iterable of the parameters held by the optimizer."""
         for param_group in self.param_groups:
-            for p in param_group['params']:
+            for p in param_group["params"]:
                 yield p
 
     @property
@@ -54,12 +53,12 @@ class FairseqOptimizer(object):
 
     def get_lr(self):
         """Return the current learning rate."""
-        return self.param_groups[0]['lr']
+        return self.param_groups[0]["lr"]
 
     def set_lr(self, lr):
         """Set the learning rate."""
         for param_group in self.param_groups:
-            param_group['lr'] = lr
+            param_group["lr"] = lr
 
     def state_dict(self):
         """Return the optimizer's state dict."""
@@ -94,7 +93,7 @@ class FairseqOptimizer(object):
         """Clips gradient norm."""
         return utils.clip_grad_norm_(self.params, max_norm, aggregate_norm_fn)
 
-    def step(self, closure=None, scale=1.):
+    def step(self, closure=None, scale=1.0):
         """Performs a single optimization step."""
         if self.supports_step_with_scale:
             self.optimizer.step(closure, scale=scale)
@@ -109,13 +108,13 @@ class FairseqOptimizer(object):
 
     @property
     def supports_memory_efficient_fp16(self):
-        if hasattr(self.optimizer, 'supports_memory_efficient_fp16'):
+        if hasattr(self.optimizer, "supports_memory_efficient_fp16"):
             return self.optimizer.supports_memory_efficient_fp16
         return False
 
     @property
     def supports_step_with_scale(self):
-        if hasattr(self.optimizer, 'supports_step_with_scale'):
+        if hasattr(self.optimizer, "supports_step_with_scale"):
             return self.optimizer.supports_step_with_scale
         return False
 
@@ -125,7 +124,7 @@ class FairseqOptimizer(object):
         Whether the optimizer supports collapsing of the model
         parameters/gradients into a single contiguous Tensor.
         """
-        if hasattr(self.optimizer, 'supports_flat_params'):
+        if hasattr(self.optimizer, "supports_flat_params"):
             return self.optimizer.supports_flat_params
         return False
 

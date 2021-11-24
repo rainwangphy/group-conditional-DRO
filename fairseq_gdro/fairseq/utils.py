@@ -26,6 +26,7 @@ from torch import Tensor
 
 try:
     from amp_C import multi_tensor_l2norm
+
     multi_tensor_l2norm_available = True
 except ImportError:
     multi_tensor_l2norm_available = False
@@ -38,7 +39,11 @@ MANIFOLD_PATH_SEP = "|"
 
 
 def split_paths(paths: str) -> List[str]:
-    return paths.split(os.pathsep) if "://" not in paths else paths.split(MANIFOLD_PATH_SEP)
+    return (
+        paths.split(os.pathsep)
+        if "://" not in paths
+        else paths.split(MANIFOLD_PATH_SEP)
+    )
 
 
 def load_ensemble_for_inference(filenames, task, model_arg_overrides=None):
@@ -54,7 +59,7 @@ def load_ensemble_for_inference(filenames, task, model_arg_overrides=None):
 
 
 def apply_to_sample(f, sample):
-    if hasattr(sample, '__len__') and len(sample) == 0:
+    if hasattr(sample, "__len__") and len(sample) == 0:
         return {}
 
     def _apply(x):
@@ -185,9 +190,17 @@ def replace_unk(hypo_str, src_str, alignment, align_dict, unk):
 
 
 def post_process_prediction(
-    hypo_tokens, src_str, alignment, align_dict, tgt_dict, remove_bpe=None, extra_symbols_to_ignore=None
+    hypo_tokens,
+    src_str,
+    alignment,
+    align_dict,
+    tgt_dict,
+    remove_bpe=None,
+    extra_symbols_to_ignore=None,
 ):
-    hypo_str = tgt_dict.string(hypo_tokens, remove_bpe, extra_symbols_to_ignore=extra_symbols_to_ignore)
+    hypo_str = tgt_dict.string(
+        hypo_tokens, remove_bpe, extra_symbols_to_ignore=extra_symbols_to_ignore
+    )
     if align_dict is not None:
         hypo_str = replace_unk(
             hypo_str, src_str, alignment, align_dict, tgt_dict.unk_string()
@@ -260,7 +273,7 @@ def item(tensor):
     return tensor
 
 
-def multi_tensor_total_norm(grads, chunk_size=2048*32) -> torch.Tensor:
+def multi_tensor_total_norm(grads, chunk_size=2048 * 32) -> torch.Tensor:
     per_device_grads = {}
     norms = []
     for grad in grads:
@@ -276,7 +289,9 @@ def multi_tensor_total_norm(grads, chunk_size=2048*32) -> torch.Tensor:
             # TODO(msb) return has_inf
             has_inf = torch.zeros((1, 1), dtype=torch.int, device=device)
             with torch.cuda.device(device):
-                norm = multi_tensor_l2norm(chunk_size, has_inf, [cur_device_grads], False)
+                norm = multi_tensor_l2norm(
+                    chunk_size, has_inf, [cur_device_grads], False
+                )
                 norms.append(norm[0])
         else:
             norms += [torch.norm(g, p=2, dtype=torch.float32) for g in cur_device_grads]
@@ -291,9 +306,9 @@ def clip_grad_norm_(params, max_norm, aggregate_norm_fn=None) -> torch.Tensor:
     grads = [p.grad.detach() for p in filter(lambda p: p.grad is not None, params)]
     if len(grads) == 0:
         if len(params) > 0:
-            return params[0].new_tensor(0.)
+            return params[0].new_tensor(0.0)
         else:
-            return torch.tensor(0.)
+            return torch.tensor(0.0)
 
     if len(grads) == 1:
         total_norm = torch.norm(grads[0], p=2, dtype=torch.float32)
@@ -418,11 +433,11 @@ def log_softmax(x, dim: int, onnx_trace: bool = False):
 
 def get_perplexity(loss, round=2, base=2):
     if loss is None:
-        return 0.
+        return 0.0
     try:
         return safe_round(base ** loss, round)
     except OverflowError:
-        return float('inf')
+        return float("inf")
 
 
 def deprecation_warning(message, stacklevel=3):
@@ -431,7 +446,7 @@ def deprecation_warning(message, stacklevel=3):
 
 
 def get_activation_fn(activation: str) -> Callable:
-    """ Returns the activation function corresponding to `activation` """
+    """Returns the activation function corresponding to `activation`"""
     if activation == "relu":
         return F.relu
     elif activation == "gelu":
@@ -558,6 +573,7 @@ def new_arange(x, *size):
 
 def get_tpu_device(args):
     import torch_xla.core.xla_model as xm
+
     return xm.xla_device()
 
 

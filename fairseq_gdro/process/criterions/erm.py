@@ -18,5 +18,5 @@ class ERM_BCE(nn.Module):
         acc = compute_binary_group_acc(x, y, group_ids, self.n_groups, self.device)
         if not self.training:
             return acc
-        loss = bce(x, y, reduction='mean')
+        loss = bce(x, y, reduction="mean")
         return loss, acc

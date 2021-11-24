@@ -29,6 +29,7 @@ try:
         gather_from_model_parallel_region,
         VocabParallelEmbedding,
     )
+
     has_megatron_submodule = True
 except (ImportError, ModuleNotFoundError):
     has_megatron_submodule = False
@@ -37,18 +38,19 @@ except (ImportError, ModuleNotFoundError):
 logger = logging.getLogger(__name__)
 
 
-@register_model('model_parallel_transformer')
+@register_model("model_parallel_transformer")
 class ModelParallelTransformerModel(TransformerModel):
     """
     Model parallel Transformer model.
     """
+
     @classmethod
     def build_embedding(cls, args, dictionary, embed_dim, path=None):
         if not has_megatron_submodule:
             raise ImportError(
-                '\n\nPlease install the megatron submodule:'
-                '\n\n  git submodule update --init '
-                'fairseq/model_parallel/megatron'
+                "\n\nPlease install the megatron submodule:"
+                "\n\n  git submodule update --init "
+                "fairseq/model_parallel/megatron"
             )
         num_embeddings = len(dictionary)
         padding_idx = dictionary.pad()
@@ -56,10 +58,15 @@ class ModelParallelTransformerModel(TransformerModel):
         def _vocab_init(tensor, **kwargs):
             nn.init.normal_(tensor, mean=0, std=num_embeddings ** -0.5)
             nn.init.constant_(tensor[1], 0)
-        emb = VocabParallelEmbedding(num_embeddings, embed_dim, padding_idx, init_method=_vocab_init)
+
+        emb = VocabParallelEmbedding(
+            num_embeddings, embed_dim, padding_idx, init_method=_vocab_init
+        )
         # if provided, load from preloaded dictionaries
         if path:
-            raise NotImplementedError("Loading of embedding from path is not supported for model parallel")
+            raise NotImplementedError(
+                "Loading of embedding from path is not supported for model parallel"
+            )
         return emb
 
     @classmethod
@@ -72,7 +79,7 @@ class ModelParallelTransformerModel(TransformerModel):
             args,
             tgt_dict,
             embed_tokens,
-            no_encoder_attn=getattr(args, 'no_cross_attention', False),
+            no_encoder_attn=getattr(args, "no_cross_attention", False),
         )
 
 
@@ -99,7 +106,7 @@ class ModelParallelTransformerDecoder(TransformerDecoder):
         """Project features to the vocabulary size."""
         if not self.share_input_output_embed:
             raise NotImplementedError(
-                'Model parallel training currently requires --share-decoder-input-output-embed'
+                "Model parallel training currently requires --share-decoder-input-output-embed"
             )
 
         features = copy_to_model_parallel_region(features)
@@ -107,6 +114,6 @@ class ModelParallelTransformerDecoder(TransformerDecoder):
         # project back to size of vocabulary
         x = self.output_projection(features)
 
-        if getattr(self.args, 'criterion') != 'vocab_parallel_cross_entropy':
+        if getattr(self.args, "criterion") != "vocab_parallel_cross_entropy":
             x = gather_from_model_parallel_region(x).contiguous()
         return x

@@ -34,14 +34,16 @@ class TestFileIO(unittest.TestCase):
 
     def test_file_io(self):
         from fairseq.file_io import PathManager
+
         with PathManager.open(os.path.join(self._tmpdir, "test.txt"), "r") as f:
             s = f.read()
         self.assertEqual(s, self._tmpfile_contents)
 
     def test_file_io_oss(self):
         # Mock fvcore to simulate oss environment.
-        sys.modules['fvcore'] = MagicMock()
+        sys.modules["fvcore"] = MagicMock()
         from fairseq.file_io import PathManager
+
         with PathManager.open(os.path.join(self._tmpdir, "test.txt"), "r") as f:
             s = f.read()
         self.assertEqual(s, self._tmpfile_contents)

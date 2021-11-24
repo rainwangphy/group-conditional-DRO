@@ -9,7 +9,6 @@ from fairseq.data import iterators
 
 
 class TestIterators(unittest.TestCase):
-
     def test_counting_iterator(self, ref=None, itr=None):
         if ref is None:
             assert itr is None
@@ -71,5 +70,5 @@ class TestIterators(unittest.TestCase):
         self.test_counting_iterator(ref, itr)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

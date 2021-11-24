@@ -15,17 +15,20 @@ from fairseq.tasks import FairseqTask, register_task
 logger = logging.getLogger(__name__)
 
 
-@register_task('dummy_mt')
+@register_task("dummy_mt")
 class DummyMTTask(FairseqTask):
-
     @staticmethod
     def add_args(parser):
         """Add task-specific arguments to the parser."""
-        parser.add_argument('--dict-size', default=49996, type=int)
-        parser.add_argument('--dataset-size', default=100000, type=int)
-        parser.add_argument('--tokens-per-sample', default=512, type=int,
-                            help='max number of total tokens over all segments '
-                                 'per sample for BERT dataset')
+        parser.add_argument("--dict-size", default=49996, type=int)
+        parser.add_argument("--dataset-size", default=100000, type=int)
+        parser.add_argument(
+            "--tokens-per-sample",
+            default=512,
+            type=int,
+            help="max number of total tokens over all segments "
+            "per sample for BERT dataset",
+        )
 
     def __init__(self, args, dictionary):
         super().__init__(args)
@@ -41,11 +44,11 @@ class DummyMTTask(FairseqTask):
 
     @classmethod
     def setup_task(cls, args, **kwargs):
-        """Setup the task. """
+        """Setup the task."""
         dictionary = Dictionary()
         for i in range(args.dict_size):
-            dictionary.add_symbol('word{}'.format(i))
-        logger.info('dictionary: {} types'.format(len(dictionary)))
+            dictionary.add_symbol("word{}".format(i))
+        logger.info("dictionary: {} types".format(len(dictionary)))
         return cls(args, dictionary)
 
     def load_dataset(self, split, epoch=1, combine=False, **kwargs):
@@ -60,17 +63,17 @@ class DummyMTTask(FairseqTask):
         tgt = torch.stack([self.dummy_tgt for _ in range(bsz)])
         self.datasets[split] = DummyDataset(
             {
-                'id': 1,
-                'net_input': {
-                    'src_tokens': torch.stack([self.dummy_src for _ in range(bsz)]),
-                    'src_lengths': torch.full(
-                        (bsz, ), self.args.tokens_per_sample, dtype=torch.long
+                "id": 1,
+                "net_input": {
+                    "src_tokens": torch.stack([self.dummy_src for _ in range(bsz)]),
+                    "src_lengths": torch.full(
+                        (bsz,), self.args.tokens_per_sample, dtype=torch.long
                     ),
-                    'prev_output_tokens': tgt.clone(),
+                    "prev_output_tokens": tgt.clone(),
                 },
-                'target': tgt,
-                'nsentences': bsz,
-                'ntokens': bsz * self.args.tokens_per_sample,
+                "target": tgt,
+                "nsentences": bsz,
+                "ntokens": bsz * self.args.tokens_per_sample,
             },
             num_items=self.args.dataset_size,
             item_size=self.args.tokens_per_sample,
@@ -86,7 +89,6 @@ class DummyMTTask(FairseqTask):
 
 
 class DummyDataset(FairseqDataset):
-
     def __init__(self, batch, num_items, item_size):
         super().__init__()
         self.batch = batch

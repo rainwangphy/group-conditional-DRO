@@ -25,6 +25,7 @@ try:
         gather_from_model_parallel_region,
         VocabParallelEmbedding,
     )
+
     has_megatron_submodule = True
 except (ImportError, ModuleNotFoundError):
     has_megatron_submodule = False
@@ -37,6 +38,7 @@ class ModelParallelTransformerSentenceEncoder(TransformerSentenceEncoder):
     Implementation for a Model Parallel Bi-directional Transformer based
     Sentence Encoder used in BERT/XLM style pre-trained models.
     """
+
     def build_embedding(self, vocab_size, embedding_dim, padding_idx):
         return VocabParallelEmbedding(vocab_size, embedding_dim, padding_idx)
 

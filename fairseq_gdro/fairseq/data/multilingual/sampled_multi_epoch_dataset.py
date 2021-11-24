@@ -12,7 +12,11 @@ import numpy as np
 import torch
 from fairseq import distributed_utils
 from fairseq.data import plasma_utils, SampledMultiDataset
-from .sampled_multi_dataset import default_virtual_size_func, get_time_gap, CollateFormat
+from .sampled_multi_dataset import (
+    default_virtual_size_func,
+    get_time_gap,
+    CollateFormat,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -48,6 +52,7 @@ class SampledMultiEpochDataset(SampledMultiDataset):
         shared_collater (bool): whether or not to all sub-datasets have the same collater.
         shard_epoch (int): the real epoch number for shard selection.
     """
+
     def __init__(
         self,
         datasets,
@@ -58,7 +63,7 @@ class SampledMultiEpochDataset(SampledMultiDataset):
         eval_key=None,
         collate_format=CollateFormat.single,
         virtual_size=default_virtual_size_func,
-        split='',
+        split="",
         virtual_epoch_size=None,
         shared_collater=False,
         shard_epoch=1,
@@ -84,14 +89,22 @@ class SampledMultiEpochDataset(SampledMultiDataset):
         )
 
     def _setup(self, epoch):
-        self.virtual_epoch_size = self.virtual_epoch_size if self.virtual_epoch_size is not None else self.virtual_size
+        self.virtual_epoch_size = (
+            self.virtual_epoch_size
+            if self.virtual_epoch_size is not None
+            else self.virtual_size
+        )
         if self.virtual_epoch_size > self.virtual_size:
-            logger.warning(f'virtual epoch size {self.virtual_epoch_size} '
-                           f'is greater than virtual dataset size {self.virtual_size}')
+            logger.warning(
+                f"virtual epoch size {self.virtual_epoch_size} "
+                f"is greater than virtual dataset size {self.virtual_size}"
+            )
             self.virtual_epoch_size = self.virtual_size
         self.num_virtual_epochs = math.ceil(self.virtual_size / self.virtual_epoch_size)
         self._current_epoch_start_index = self._get_epoch_start_index(epoch)
-        logger.info(f'virtual epoch size {self.virtual_epoch_size}; virtual dataset size {self.virtual_size}')
+        logger.info(
+            f"virtual epoch size {self.virtual_epoch_size}; virtual dataset size {self.virtual_size}"
+        )
 
     def _map_epoch_index_to_global(self, index):
         index = self._current_epoch_start_index + index
@@ -116,7 +129,8 @@ class SampledMultiEpochDataset(SampledMultiDataset):
     def __len__(self):
         return (
             self.virtual_epoch_size
-            if self._current_epoch_start_index + self.virtual_epoch_size < self.virtual_size
+            if self._current_epoch_start_index + self.virtual_epoch_size
+            < self.virtual_size
             else self.virtual_size - self._current_epoch_start_index
         )
 
@@ -140,7 +154,7 @@ class SampledMultiEpochDataset(SampledMultiDataset):
                 size_cache[(ds_idx, ds_sample_idx)] = s
                 ret.append(s)
         self._epoch_sizes = plasma_utils.PlasmaArray(np.array(ret, np.int64))
-        logger.info(f'sizes() calling time: {get_time_gap(start_time, time.time())}')
+        logger.info(f"sizes() calling time: {get_time_gap(start_time, time.time())}")
         return self._epoch_sizes.array
 
     def ordered_indices(self):
@@ -151,15 +165,17 @@ class SampledMultiEpochDataset(SampledMultiDataset):
             # No need to do shuffle as the data items are already randomized
             indices = np.arange(len(self))
             sizes = self.sizes
-            tgt_sizes = sizes[:, 1] if len(sizes.shape) > 0 and sizes.shape[1] > 1 else None
-            src_sizes = sizes[:, 0] if len(sizes.shape) > 0 and sizes.shape[1] > 1 else sizes
+            tgt_sizes = (
+                sizes[:, 1] if len(sizes.shape) > 0 and sizes.shape[1] > 1 else None
+            )
+            src_sizes = (
+                sizes[:, 0] if len(sizes.shape) > 0 and sizes.shape[1] > 1 else sizes
+            )
 
             # sort by target length, then source length
             if tgt_sizes is not None:
-                indices = indices[
-                    np.argsort(tgt_sizes[indices], kind='mergesort')
-                ]
-            sort_indices = indices[np.argsort(src_sizes[indices], kind='mergesort')]
+                indices = indices[np.argsort(tgt_sizes[indices], kind="mergesort")]
+            sort_indices = indices[np.argsort(src_sizes[indices], kind="mergesort")]
         else:
             sort_indices = np.arange(len(self))
         self._epoch_ordered_indices = plasma_utils.PlasmaArray(sort_indices)
@@ -189,15 +205,22 @@ class SampledMultiEpochDataset(SampledMultiDataset):
 
     def _next_global_indices(self, epoch):
         rng = np.random.RandomState(
-           [
-               int(hashlib.sha1(str(self.__class__.__name__).encode('utf-8')).hexdigest(), 16) % (2 ** 32),
-               self.seed % (2 ** 32),  # global seed
-               epoch,  # epoch index,
-           ]
+            [
+                int(
+                    hashlib.sha1(
+                        str(self.__class__.__name__).encode("utf-8")
+                    ).hexdigest(),
+                    16,
+                )
+                % (2 ** 32),
+                self.seed % (2 ** 32),  # global seed
+                epoch,  # epoch index,
+            ]
         )
         del self._random_globa_indices
         self._random_globa_indices = plasma_utils.PlasmaArray(
-            rng.choice(self.virtual_size, self.virtual_size, replace=False))
+            rng.choice(self.virtual_size, self.virtual_size, replace=False)
+        )
         if self.load_next_shard is None:
             self.load_next_shard = False
         else:
@@ -207,8 +230,10 @@ class SampledMultiEpochDataset(SampledMultiDataset):
             # a hack to avoid possible out of sync of shard epoch number
             # TODO: to confirm whether this is needed; without it, CUDA event error is occassionally observed
             synced_shard_epoch = self._sync_shard_epoch(self.shard_epoch)
-            logger.info('to load next epoch/shard in next load_dataset: '
-                        f'epoch={epoch}/shard_epoch={self.shard_epoch}[synced={synced_shard_epoch}]')
+            logger.info(
+                "to load next epoch/shard in next load_dataset: "
+                f"epoch={epoch}/shard_epoch={self.shard_epoch}[synced={synced_shard_epoch}]"
+            )
 
     def _sync_shard_epoch(self, shard_epoch):
         # in case the ratios are not precisely the same across processes
@@ -241,17 +266,19 @@ class SampledMultiEpochDataset(SampledMultiDataset):
         if index == 0 or self._random_globa_indices is None:
             # need to start from the beginning,
             # so call super().set_epoch(epoch) to establish the global virtual indices
-            logger.info('establishing a new set of global virtual indices for '
-                        f'epoch={epoch}/shard_epoch={self.shard_epoch}')
+            logger.info(
+                "establishing a new set of global virtual indices for "
+                f"epoch={epoch}/shard_epoch={self.shard_epoch}"
+            )
             super().set_epoch(epoch)
             self._next_global_indices(epoch)
         else:
             self._cur_epoch = epoch
         # reset cache sizes and ordered_indices for the epoch after moving to a new epoch
 
-        self._clean_if_not_none([
-            self._epoch_sizes, self._epoch_ordered_indices, self._size_cache
-        ])
+        self._clean_if_not_none(
+            [self._epoch_sizes, self._epoch_ordered_indices, self._size_cache]
+        )
         self._epoch_sizes = None
         self._epoch_ordered_indices = None
         self._current_epoch_start_index = index

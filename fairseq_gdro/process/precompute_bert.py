@@ -3,6 +3,7 @@ import subprocess
 import argparse
 import torch
 import json
+
 # import h5py
 import gzip, csv
 import numpy as np
@@ -13,22 +14,30 @@ from torch.nn.utils.rnn import pad_sequence
 from transformers import *
 
 
-
 def get_sentence_features(batches, tokenizer, model, device, maxlen=500):
-    features = tokenizer.batch_encode_plus(batches, padding=True,
-        return_attention_mask=True, return_token_type_ids=True,
-        truncation=True, max_length=maxlen)
-    attention_mask = torch.tensor(features['attention_mask'], device=device)
-    input_ids = torch.tensor(features['input_ids'], device=device)
-    token_type_ids=torch.tensor(features['token_type_ids'], device=device)
+    features = tokenizer.batch_encode_plus(
+        batches,
+        padding=True,
+        return_attention_mask=True,
+        return_token_type_ids=True,
+        truncation=True,
+        max_length=maxlen,
+    )
+    attention_mask = torch.tensor(features["attention_mask"], device=device)
+    input_ids = torch.tensor(features["input_ids"], device=device)
+    token_type_ids = torch.tensor(features["token_type_ids"], device=device)
 
     # (batch, seq_len, nfeature)
-    token_embeddings = model(input_ids=input_ids,
+    token_embeddings = model(
+        input_ids=input_ids,
         attention_mask=attention_mask,
-        token_type_ids=token_type_ids)[0]
+        token_type_ids=token_type_ids,
+    )[0]
 
     # mean of embeddings as sentence embeddings
-    embeddings = (attention_mask.unsqueeze(-1) * token_embeddings).sum(1) / attention_mask.sum(1).unsqueeze(-1)
+    embeddings = (attention_mask.unsqueeze(-1) * token_embeddings).sum(
+        1
+    ) / attention_mask.sum(1).unsqueeze(-1)
 
     return embeddings
 
@@ -36,23 +45,29 @@ def get_sentence_features(batches, tokenizer, model, device, maxlen=500):
 def hdf5_create_dataset(group, input_file, fp16=False):
     global tokenizer, model, device
 
-    print(f'precompute embeddings for {input_file}')
+    print(f"precompute embeddings for {input_file}")
     pbar = tqdm()
-    with open(input_file, 'r') as fin:
+    with open(input_file, "r") as fin:
         batches = []
         cur = 0
         for i, line in enumerate(fin):
             batches.append(line.strip())
-            if (i+1) % batch_size == 0:
+            if (i + 1) % batch_size == 0:
                 with torch.no_grad():
-                    embeddings = get_sentence_features(batches, tokenizer, model, device)
+                    embeddings = get_sentence_features(
+                        batches, tokenizer, model, device
+                    )
 
                 for j, embed in enumerate(embeddings):
                     embed = embed.cpu().numpy()
                     if fp16:
-                        embed = embed.astype('float16')
-                    group.create_dataset(f'{cur}', embed.shape,
-                        dtype='float32' if not fp16 else 'float16', data=embed)
+                        embed = embed.astype("float16")
+                    group.create_dataset(
+                        f"{cur}",
+                        embed.shape,
+                        dtype="float32" if not fp16 else "float16",
+                        data=embed,
+                    )
                     cur += 1
 
                 pbar.update(len(batches))
@@ -65,33 +80,40 @@ def hdf5_create_dataset(group, input_file, fp16=False):
             for j, embed in enumerate(embeddings):
                 embed = embed.cpu().numpy()
                 if fp16:
-                    embed = embed.astype('float16')
-                group.create_dataset(f'{cur}', embed.shape,
-                    dtype='float32' if not fp16 else 'float16', data=embed)
+                    embed = embed.astype("float16")
+                group.create_dataset(
+                    f"{cur}",
+                    embed.shape,
+                    dtype="float32" if not fp16 else "float16",
+                    data=embed,
+                )
                 cur += 1
+
 
 def jsonl_create_dataset(output_file, input_file, fp16=False):
     global tokenizer, model, device
 
-    print(f'precompute embeddings for {input_file}')
+    print(f"precompute embeddings for {input_file}")
     pbar = tqdm()
-    fout = open(output_file, 'w')
+    fout = open(output_file, "w")
 
-    with open(input_file, 'r') as fin:
+    with open(input_file, "r") as fin:
         batches = []
         cur = 0
         for i, line in enumerate(fin):
             batches.append(line.strip())
-            if (i+1) % batch_size == 0:
+            if (i + 1) % batch_size == 0:
                 with torch.no_grad():
-                    embeddings = get_sentence_features(batches, tokenizer, model, device)
+                    embeddings = get_sentence_features(
+                        batches, tokenizer, model, device
+                    )
 
                 for j, embed in enumerate(embeddings):
                     embed = embed.cpu().numpy()
                     if fp16:
-                        embed = embed.astype('float16')
+                        embed = embed.astype("float16")
                     fout.write(json.dumps({cur: embed.tolist()}))
-                    fout.write('\n')
+                    fout.write("\n")
                     cur += 1
 
                 pbar.update(len(batches))
@@ -104,38 +126,41 @@ def jsonl_create_dataset(output_file, input_file, fp16=False):
             for j, embed in enumerate(embeddings):
                 embed = embed.cpu().numpy()
                 if fp16:
-                    embed = embed.astype('float16')
+                    embed = embed.astype("float16")
                 fout.write(json.dumps({cur: embed.tolist()}))
-                fout.write('\n')
+                fout.write("\n")
                 cur += 1
     fout.close()
+
 
 def csv_create_dataset(output_file, input_file, fp16=False):
     global tokenizer, model, device
 
-    print(f'precompute embeddings for {input_file}')
+    print(f"precompute embeddings for {input_file}")
     pbar = tqdm()
-    fout = gzip.open(output_file, 'wt')
+    fout = gzip.open(output_file, "wt")
     # fout = open(output_file, 'w')
 
-    fieldnames = ['embedding']
+    fieldnames = ["embedding"]
     writer = csv.DictWriter(fout, fieldnames=fieldnames)
 
     writer.writeheader()
-    with open(input_file, 'r') as fin:
+    with open(input_file, "r") as fin:
         batches = []
         cur = 0
         for i, line in enumerate(fin):
             batches.append(line.strip())
-            if (i+1) % batch_size == 0:
+            if (i + 1) % batch_size == 0:
                 with torch.no_grad():
-                    embeddings = get_sentence_features(batches, tokenizer, model, device)
+                    embeddings = get_sentence_features(
+                        batches, tokenizer, model, device
+                    )
 
                 for j, embed in enumerate(embeddings):
                     embed = embed.cpu().numpy()
                     if fp16:
-                        embed = embed.astype('float16')
-                    writer.writerow({'embedding': embed.tolist()})
+                        embed = embed.astype("float16")
+                    writer.writerow({"embedding": embed.tolist()})
                     cur += 1
 
                 pbar.update(len(batches))
@@ -148,8 +173,8 @@ def csv_create_dataset(output_file, input_file, fp16=False):
             for j, embed in enumerate(embeddings):
                 embed = embed.cpu().numpy()
                 if fp16:
-                    embed = embed.astype('float16')
-                writer.writerow({'embedding': embed.tolist()})
+                    embed = embed.astype("float16")
+                writer.writerow({"embedding": embed.tolist()})
                 cur += 1
     fout.close()
 
@@ -157,31 +182,36 @@ def csv_create_dataset(output_file, input_file, fp16=False):
 def np_create_dataset(output_file, input_file, fp16=False):
     global tokenizer, model, device
 
-    print(f'precompute embeddings for {input_file}')
+    print(f"precompute embeddings for {input_file}")
     pbar = tqdm()
     # fout = open(output_file, 'w')
 
-    proc = subprocess.run(['wc', '-l', input_file], capture_output=True)
-    dstore_size = int(proc.stdout.decode('utf-8').split()[0])
+    proc = subprocess.run(["wc", "-l", input_file], capture_output=True)
+    dstore_size = int(proc.stdout.decode("utf-8").split()[0])
 
-    dtype = 'float16' if fp16 else 'float32'
-    print(f'{dstore_size} examples')
-    dstore = np.memmap(output_file,
-                       dtype=dtype,
-                       mode='w+',
-                       shape=(dstore_size, model.config.hidden_size),
-                       )
+    dtype = "float16" if fp16 else "float32"
+    print(f"{dstore_size} examples")
+    dstore = np.memmap(
+        output_file,
+        dtype=dtype,
+        mode="w+",
+        shape=(dstore_size, model.config.hidden_size),
+    )
     print(model.config.hidden_size)
-    with open(input_file, 'r') as fin:
+    with open(input_file, "r") as fin:
         batches = []
         cur = 0
         for i, line in enumerate(fin):
             batches.append(line.strip())
-            if (i+1) % batch_size == 0:
+            if (i + 1) % batch_size == 0:
                 with torch.no_grad():
-                    embeddings = get_sentence_features(batches, tokenizer, model, device)
+                    embeddings = get_sentence_features(
+                        batches, tokenizer, model, device
+                    )
 
-                dstore[cur:cur+embeddings.size(0)] = embeddings.cpu().numpy().astype(dtype)
+                dstore[cur : cur + embeddings.size(0)] = (
+                    embeddings.cpu().numpy().astype(dtype)
+                )
                 cur += embeddings.size(0)
 
                 assert model.config.hidden_size == embeddings.size(1)
@@ -193,18 +223,33 @@ def np_create_dataset(output_file, input_file, fp16=False):
             with torch.no_grad():
                 embeddings = get_sentence_features(batches, tokenizer, model, device)
 
-            dstore[cur:cur+embeddings.size(0)] = embeddings.cpu().numpy().astype(dtype)
+            dstore[cur : cur + embeddings.size(0)] = (
+                embeddings.cpu().numpy().astype(dtype)
+            )
             cur += embeddings.size(0)
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='pre-compute the Bert embeddings')
-    parser.add_argument('--dataset', type=str, help='the path to the dataset name')
-    parser.add_argument('--split', type=str, default=None,
-        help='if specified, only compute for this split')
-    parser.add_argument('--fp32', action='store_true', default=False,
-        help='whether to use half float point. It uses half float by default')
-    parser.add_argument('--sent-bert', action='store_true', default=False,
-        help='whether to use sentence-BERT')
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="pre-compute the Bert embeddings")
+    parser.add_argument("--dataset", type=str, help="the path to the dataset name")
+    parser.add_argument(
+        "--split",
+        type=str,
+        default=None,
+        help="if specified, only compute for this split",
+    )
+    parser.add_argument(
+        "--fp32",
+        action="store_true",
+        default=False,
+        help="whether to use half float point. It uses half float by default",
+    )
+    parser.add_argument(
+        "--sent-bert",
+        action="store_true",
+        default=False,
+        help="whether to use sentence-BERT",
+    )
 
     args = parser.parse_args()
     args.cuda = torch.cuda.is_available()
@@ -215,8 +260,12 @@ if __name__ == '__main__':
 
     device = "cuda" if args.cuda else "cpu"
 
-    model_name = 'bert-base-uncased' if not args.sent_bert else 'sentence-transformers/bert-large-nli-mean-tokens'
-    model_short = 'bert' if not args.sent_bert else 'sentbert'
+    model_name = (
+        "bert-base-uncased"
+        if not args.sent_bert
+        else "sentence-transformers/bert-large-nli-mean-tokens"
+    )
+    model_short = "bert" if not args.sent_bert else "sentbert"
 
     model = AutoModel.from_pretrained(model_name)
     tokenizer = AutoTokenizer.from_pretrained(model_name)
@@ -224,12 +273,21 @@ if __name__ == '__main__':
     model.to(device)
     model.eval()
 
-    #gname_list = [args.split] if args.split is not None else ['valid', 'test', 'template', 'train']
+    # gname_list = [args.split] if args.split is not None else ['valid', 'test', 'template', 'train']
     batch_size = 128
-    
-    ppath = os.path.join("/private/home/chuntinz/work/data/hatespeech/founta/split_raw", "train.sent0")
+
+    ppath = os.path.join(
+        "/private/home/chuntinz/work/data/hatespeech/founta/split_raw", "train.sent0"
+    )
     if os.path.isfile(ppath):
-        np_create_dataset(os.path.join("/private/home/chuntinz/work/data/hatespeech/founta/split_raw", "founta_bert.npy"), ppath, False)
+        np_create_dataset(
+            os.path.join(
+                "/private/home/chuntinz/work/data/hatespeech/founta/split_raw",
+                "founta_bert.npy",
+            ),
+            ppath,
+            False,
+        )
 
     # for gname in gname_list:
     #     if os.path.isfile(f'datasets/{args.dataset}/{gname}.txt'):
